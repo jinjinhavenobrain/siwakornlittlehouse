@@ -1,0 +1,9 @@
+House Studio 3D — V2 structural editor
+
+Open index.html after extracting the ZIP. Start with Build in the top bar.
+Move the main house's four exterior walls using their exact position controls or drag them in 3D. Select Main floor to edit all four boundaries.
+Select the bathroom to move or resize the entire extension; bathroom furniture follows the room. If the extension no longer touches the main house or its entry doors do not line up, move the access doors manually.
+Select a door or window to choose a different wall and change position/size/height/color. Use + Wall, + Door, + Window for new structural objects.
+Material palette changes building finishes. The Decorate inspector changes individual furniture colors.
+Save your layout or export JSON to preserve all the new structural changes.
+This is conceptual visualization and not a construction-ready structural/MEP plan.
