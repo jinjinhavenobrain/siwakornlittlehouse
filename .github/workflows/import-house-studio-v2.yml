@@ -1,0 +1,67 @@
+name: Import House Studio V2 files
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    if: github.event.release.tag_name == 'house-studio-v2-files'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+
+      - name: Download the uploaded ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/house-studio-upload"
+          gh release download house-studio-v2-files \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern 'House-Studio-3D-GitHub-Missing-Folders.zip' \
+            --dir "$RUNNER_TEMP/house-studio-upload"
+
+      - name: Verify and extract exactly the missing files
+        env:
+          UPLOAD_ZIP: ${{ runner.temp }}/house-studio-upload/House-Studio-3D-GitHub-Missing-Folders.zip
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, zipfile
+          expected = {
+              "src/core.js", "src/models.js", "src/icons.js",
+              "src/architecture.js", "src/main.js",
+              "tests/core.test.mjs", "tests/structure.test.mjs",
+              "assets/designer-reference.jpg", "assets/bathroom-sketch.png",
+              "assets/three-runtime-base.js", "assets/house-studio.js",
+          }
+          with zipfile.ZipFile(os.environ["UPLOAD_ZIP"]) as archive:
+              members = [entry for entry in archive.infolist() if not entry.is_dir()]
+              actual = {entry.filename for entry in members}
+              if actual != expected or len(members) != len(expected):
+                  raise SystemExit("ZIP contents do not match the 11 required project files.")
+              for entry in members:
+                  target = pathlib.Path(entry.filename)
+                  if target.exists():
+                      raise SystemExit(f"Refusing to overwrite an existing repository file: {target}")
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(archive.read(entry))
+          print("Extracted and verified all 11 project files.")
+          PY
+
+      - name: Run the dependency-free structural tests
+        run: node --test tests/structure.test.mjs
+
+      - name: Commit missing project files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets src tests
+          git commit -m "Restore complete House Studio 3D V2 project files"
+          git push origin HEAD:main
