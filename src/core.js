@@ -1,3 +1,5 @@
+import {REFERENCE_LAYOUT} from './default-layout.js';
+import {boundarySpecs,wallSpec,normalizeStructure,MAIN_SIDES,SIDES,FLOOR_MATERIALS} from './structure.js';
 export const FLOOR = .38;
 export const HOUSE = { width:4.5, depth:4.75, wall:.15, height:3, ridge:4, bathroomWidth:1.5, bathroomDepth:3, balconyDepth:1 };
 export const CATALOG = [
@@ -35,8 +37,9 @@ export const definitions = Object.fromEntries(CATALOG.map(o=>[o.type,o]));
 let counter=0;
 export const uid=()=>`item-${Date.now().toString(36)}-${++counter}`;
 export function item(type,x,z,rot=0,extras={}){const def=definitions[type];return{id:uid(),type,x,z,rot,w:def.w,d:def.d,h:def.h,color:def.color,...extras};}
-export const PRESETS=[{id:'everyday',name:'Everyday studio',subtitle:'Queen bed + work nook',description:'Oak, soft white & a little breathing room.'},{id:'loft',name:'The loft workspace',subtitle:'Sleep above. Create below.',description:'A work nook below, a cosy perch above.'},{id:'flex',name:'Flexible living',subtitle:'Sofa by day. Bed by night.',description:'Room for living, with sleep tucked away.'}];
+export const PRESETS=[{id:'my-little-house',name:'My little house',subtitle:'Your supplied room',description:'A work nook, queen bed & attached bathroom.'}];
 export function preset(id){
+ if(id==='my-little-house')return JSON.parse(JSON.stringify(REFERENCE_LAYOUT.items));
  const fixtures=[item('basin',-3.35,.10,Math.PI/2),item('toilet',-3.22,-.80,Math.PI/2),item('shower',-3.00,-1.825),item('outdoor',-.65,-2.91),item('plant',-1.82,-2.90),item('plant',2.65,2.9)];
  if(id==='loft')return [...fixtures,item('loft35',-1.05,-1.14),item('desk140',-1.25,-1.37,Math.PI/2,{w:1.40,d:.58}),item('chair',-.35,-1.25,-Math.PI/2),item('wardrobe',-1.70,1.35,Math.PI/2),item('sofa',1.62,.72,-Math.PI/2),item('coffee',.55,.73),item('fridge',.80,-1.96),item('shelf',.13,-2.03),item('rug',.5,.75),item('lamp',1.79,1.85)];
  if(id==='flex')return [...fixtures,item('sofabed',-1.55,-1.36,Math.PI/2),item('desk160',1.65,-.64,-Math.PI/2,{d:.72}),item('chair',.81,-.62,Math.PI/2),item('wardrobe',-1.70,1.35,Math.PI/2),item('fridge',.78,-1.94),item('rug',.02,.78),item('plant',1.78,1.85)];
@@ -59,15 +62,14 @@ export const DOOR_ZONES=[{name:'Front door',x:0,z:2.19,w:2.0,d:.75,rot:0},{name:
 let structural=null;
 export function setStructure(s){
  structural=s;WALLS.length=0;DOOR_ZONES.length=0;
- const walls=(side)=>{const b=side.startsWith('bath-')?{left:s.bathroom.x-s.bathroom.w/2,right:s.bathroom.x+s.bathroom.w/2,back:s.bathroom.z-s.bathroom.d/2,front:s.bathroom.z+s.bathroom.d/2}:s.bounds;
- const dir=side.replace('bath-',''),horizontal=dir==='front'||dir==='back',start=horizontal?b.left:b.back,end=horizontal?b.right:b.front,fixed=horizontal?(dir==='front'?b.front:b.back):(dir==='left'?b.left:b.right);
+ const walls=(side)=>{const spec=wallSpec(s,side),horizontal=spec.axis==='x',{start,end,fixed}=spec;
  const holes=s.openings.filter(o=>o.side===side&&o.kind==='door').map(o=>({a:Math.max(start,o.at-o.w/2),b:Math.min(end,o.at+o.w/2)})).filter(o=>o.b>o.a).sort((a,b)=>a.a-b.a);
  let cursor=start;for(const h of [...holes,{a:end,b:end}]){if(h.a-cursor>.01){const mid=(cursor+h.a)/2;WALLS.push(horizontal?{x:mid,z:fixed,w:h.a-cursor,d:.15,rot:0}:{x:fixed,z:mid,w:.15,d:h.a-cursor,rot:0});}cursor=Math.max(cursor,h.b);}
  for(const o of s.openings.filter(o=>o.side===side&&o.kind==='door'))DOOR_ZONES.push({name:o.id,x:horizontal?o.at:fixed,z:horizontal?fixed:o.at,w:horizontal?o.w:.72,d:horizontal?.72:o.w,rot:0});
  };
- for(const side of ['front','back','left','right','bath-front','bath-back','bath-left','bath-right'])walls(side);
- const slider=s.openings.find(o=>o.id==='front-door'&&o.kind==='door'&&o.side==='front'&&o.w>=1.3);
- if(slider)WALLS.push({x:slider.at+slider.w/4,z:s.bounds.front,w:slider.w/2,d:.05,rot:0});
+ for(const spec of boundarySpecs(s))walls(spec.side);
+ const slider=s.openings.find(o=>o.id==='front-door'&&o.kind==='door'&&o.w>=1.3);
+ if(slider){const v=wallSpec(s,slider.side);WALLS.push(v.axis==='x'?{x:slider.at+slider.w/4,z:v.fixed,w:slider.w/2,d:.05,rot:0}:{x:v.fixed,z:slider.at+slider.w/4,w:.05,d:slider.w/2,rot:0});}
  const b=s.bounds,deck=s.balcony.depth;
  WALLS.push({x:(b.left+b.right)/2-.52,z:b.back-deck+.04,w:b.right-b.left-1.05,d:.07,rot:0});
  for(const x of [b.left,b.right])WALLS.push({x,z:b.back-deck/2,w:.07,d:deck,rot:0});
@@ -146,7 +148,7 @@ export function destination(action,items){
  if(structural){const b=structural.bounds,q=structural.bathroom;
   if(action==='bathroom')return[{x:q.x,z:q.z,pose:'stand',label:'In the bathroom'}];
   if(action==='balcony')return[{x:b.right-.6,z:b.back-structural.balcony.depth/2,pose:'stand',label:'Taking a balcony break'}];
-  if(action==='entrance')return[{x:structural.openings.find(o=>o.id==='front-door')?.at??(b.left+b.right)/2,z:b.front-.4,pose:'stand',label:'At the front door'}];
+  if(action==='entrance'){const door=structural.openings.find(o=>o.kind==='door'&&o.side==='front')||structural.openings.find(o=>o.id==='front-door');if(door){const v=wallSpec(structural,door.side),inward={front:-1,back:1,left:1,right:-1}[door.side];return[{x:v.axis==='x'?door.at:v.fixed+inward*.4,z:v.axis==='x'?v.fixed+inward*.4:door.at,pose:'stand',label:'At the entrance'}];}return[];}
  }
  if(action==='bathroom')return[{x:-2.64,z:.05,pose:'stand',label:'In the bathroom'}];
  if(action==='balcony')return[{x:1.55,z:-2.88,pose:'stand',label:'Taking a balcony break'}];
@@ -174,7 +176,15 @@ export function validateLayout(data){
   const colors=['wall','floor','foundation','bathWall','bathFloor','roof','bathRoof','balcony','rail','door','window','frame','trim','garden'];for(const k of colors)if(!/^#[0-9a-f]{6}$/i.test(s.colors[k]||''))throw new Error('Invalid structural color.');
   const seen=new Set();for(const o of s.openings){if(!o||typeof o.id!=='string'||o.id.length>60||seen.has(o.id)||!['door','window'].includes(o.kind)||!['front','back','left','right','bath-front','bath-back','bath-left','bath-right'].includes(o.side)||!['at','w','h','sill'].every(k=>Number.isFinite(o[k]))||Math.abs(o.at)>6||o.w<.4||o.w>3||o.h<.3||o.h>2.7||o.sill<0||o.sill+o.h>3)throw new Error('Invalid door or window.');seen.add(o.id);}
   for(const p of s.partitions)if(!p||typeof p.id!=='string'||p.id.length>60||seen.has(p.id)||!['x','z','w','d','h','rot'].every(k=>Number.isFinite(p[k]))||Math.abs(p.x)>6||Math.abs(p.z)>6||p.w<.1||p.d<.1||p.h<.3||p.h>3||p.w>6||p.d>6||!/^#[0-9a-f]{6}$/i.test(p.color))throw new Error('Invalid partition.');else seen.add(p.id);
-  structure=JSON.parse(JSON.stringify(s));
+  for(const [key,value] of Object.entries(s.colors))if(!/^#[0-9a-f]{6}$/i.test(value))throw new Error('Invalid structural color.');
+  if(s.bathroom.side!==undefined&&(!MAIN_SIDES.includes(s.bathroom.side)||!['start','end','depth'].every(k=>Number.isFinite(s.bathroom[k]))||s.bathroom.end-s.bathroom.start<.8||s.bathroom.depth<.8||s.bathroom.depth>4))throw new Error('Invalid bathroom attachment.');
+  if(s.wallSplits!==undefined){if(!s.wallSplits||typeof s.wallSplits!=='object'||Array.isArray(s.wallSplits))throw new Error('Invalid wall splits.');for(const [side,points] of Object.entries(s.wallSplits)){if(!MAIN_SIDES.includes(side)||!Array.isArray(points)||points.length>12||points.some(n=>!Number.isFinite(n)||Math.abs(n)>6))throw new Error('Invalid wall splits.');}}
+  if(s.segmentColors!==undefined){if(!s.segmentColors||typeof s.segmentColors!=='object'||Array.isArray(s.segmentColors))throw new Error('Invalid segment colors.');for(const [id,color] of Object.entries(s.segmentColors))if(!/^segment-(front|back|left|right)-\d{1,2}$/.test(id)||!/^#[0-9a-f]{6}$/i.test(color))throw new Error('Invalid wall section color.');}
+  if(s.finishes!==undefined){if(!s.finishes||typeof s.finishes!=='object'||Array.isArray(s.finishes))throw new Error('Invalid floor finishes.');for(const [target,f] of Object.entries(s.finishes))if(!['floor','bathFloor'].includes(target)||!f||!FLOOR_MATERIALS.some(m=>m.id===f.material)||!Number.isFinite(f.scale)||f.scale<.15||f.scale>3||!Number.isFinite(f.rotation)||Math.abs(f.rotation)>360)throw new Error('Invalid floor finish.');}
+  if(s.wallVisibility!==undefined){if(!s.wallVisibility||typeof s.wallVisibility!=='object'||Array.isArray(s.wallVisibility))throw new Error('Invalid wall visibility.');for(const [key,value] of Object.entries(s.wallVisibility))if(![...SIDES,...s.partitions.map(p=>p.id)].includes(key)||!['full','low','hidden'].includes(value))throw new Error('Invalid wall visibility.');}
+  structure=normalizeStructure(s);
+  const q=structure.bathroom;if(Math.max(Math.abs(q.x-q.w/2),Math.abs(q.x+q.w/2),Math.abs(q.z-q.d/2),Math.abs(q.z+q.d/2))>6)throw new Error('The attached bathroom must stay within the 12 m planning area.');
+  if(Object.values(structure.wallSplits).some(points=>points.length>12))throw new Error('Maximum 12 split points per exterior wall.');
  }
  return{format:'house-studio-3d',version:1,name:typeof data.name==='string'?data.name.slice(0,60):'Imported layout',preset:PRESETS.some(p=>p.id===data.preset)?data.preset:'custom',items,...(structure?{structure}:{})};
 }

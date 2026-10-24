@@ -1,4 +1,14 @@
-# V2 validation record
+# V3 validation record — 2026-10-24
+
+`npm test` passes all 29 tests. New coverage verifies the supplied default furniture, reachable destinations using its real door positions, exact contiguous wall sections and color inheritance, bathroom attachments on all four sides, a single shared doorway in rendering/navigation topology, legacy doorway migration, and JSON round trips and rejection of invalid floor/wall settings. The earlier furniture/navigation/model tests are retained for compatibility with saved layouts.
+
+A DOM acceptance harness ran the actual application source with real Three.js objects and an explicitly stubbed renderer. Passed: startup with the supplied room and one layout card; all eight floor choices; independent main/bathroom tints; size and direction; undo/redo; exact numeric split; bathroom extension from a selected section; per-wall visibility and quick keep choices; two-click wall drawing and click-to-split in Plan using the real camera projection and ray/plane math; restoring the reference room; and export/import of the edited structure and finishes. No application errors were emitted. Procedural texture maps were generated with a real 2D canvas and inspected separately. The normal esbuild bundle and dependency-free offline bundle both pass JavaScript syntax checks.
+
+**Verification limit:** the preview browser reports that WebGL rendering is unavailable. GPU drawing, texture appearance under the final lighting, 3D pointer picking on a visible GPU model, and mobile interaction have not been verified. A CPU SVG diagnostic is not a substitute for the GPU view. Existing reference furniture is preserved exactly; the toilet retains its small wall-overlap advisory from the supplied dimensions. This is a design visualization, not a construction drawing.
+
+---
+
+# Historical V2 validation record
 
 The V2 self-contained offline script was built and passed `node --check`. All five new core tests passed: exterior wall/floor movement; relocated front door collision geometry; relocated bathroom shell/floor; movable partitions; and structural JSON validation. The offline app was also loaded in a Chromium-based browser harness with a mock WebGL renderer: selecting Build, moving the bathroom together with contained furniture, expanding an exterior wall, adding and moving a window to another wall, changing its individual color, adding a partition, undo/redo and structural JSON persistence all passed with no JavaScript page errors.
 

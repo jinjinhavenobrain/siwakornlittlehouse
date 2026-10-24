@@ -1,4 +1,4 @@
-# House Studio 3D — V2 structural editor
+# House Studio 3D — V3 surfaces and attached extensions
 
 ## Open your house
 
@@ -10,8 +10,8 @@ Keep `index.html`, `style.css` and the `assets` folder together.
 
 ## Four modes
 
-- **Explore:** rotate, zoom and pan. Switch between 3D, plan, front and rear views; show/hide roof and walls; compare three layouts; choose daylight, sunset or evening.
-- **Build:** select a wall, floor, roof, bathroom, door or window. Move the four exterior walls independently; the main floor, slab, rear balcony and roof update with the footprint. Move or resize the entire bathroom (the furniture within its previous footprint moves with it). Add, move, rotate, resize or remove interior walls. Add, move, resize or remove doors and windows, including changing which wall they belong to. Set separate colors for each exterior wall, interior wall, door, window, roof, floor, bathroom surfaces, balcony and garden. Use the property panel for exact measurements or drag supported parts in 3D. Structural changes are included in undo, named layouts and exported JSON. If you detach the bathroom or misalign its doors, a warning prompts you to reconnect access manually.
+- **Explore:** rotate, zoom and pan. Switch between 3D, plan, front and rear views; show/hide roof and walls; restore the supplied room; choose daylight, sunset or evening.
+- **Build:** choose a floor or structural element in the model or component list. Main and bathroom floors have eight finishes: veined marble, natural stone, wood planks, herringbone wood, matt porcelain, microcement, terrazzo and ceramic tiles. Change the tint, tile/pattern size and direction independently; the pattern stays intact when recolored. Select an exterior wall and split it using a distance from the section start, or use **Split wall** and click a point in 3D or Plan. Each section has its own color. Select a section and choose **Extend section as bathroom**; its length and outward depth are editable and it stays attached when the house wall moves. The shared connection is one wall with one doorway, rather than overlapping shells. **Draw wall** uses two clicks in Plan to add an interior partition. Doors, windows and partitions remain individually editable. All edits are included in undo, named layouts and JSON exports.
 - **Decorate:** add from the 29-item catalogue. Drag furniture, adjust exact sizes and positions, rotate, duplicate or delete. R rotates; arrows nudge; Delete removes. Ctrl+Z / Ctrl+Y undo and redo. A red selection box and inspector warnings mark overlaps. The 10 cm snap can be disabled.
 - **Simulate:** click a floor location or use bed, desk, bathroom, balcony and entrance actions. Blocky has exactly six rectangular parts and uses pathfinding. Daily routine cycles through destinations. Adjust height from 150–195 cm, follow the person and check destination access.
 
@@ -20,10 +20,17 @@ An unfolded sofa bed takes additional space. Loft beds include a ladder; desks u
 ## Keep and share ideas
 
 - Changes autosave in the current browser, subject to its local-file storage support.
-- **Layouts** saves named copies. Changing presets can be undone.
+- **Layouts** saves named copies. Restoring the supplied room can be undone. Existing browser autosaves are preserved; choose **My little house** under Explore to restore the supplied reference room.
 - **Export JSON** is your portable backup. Import it to another browser or computer.
 - The camera button exports a PNG of the 3D scene. **Present** hides the editing panels; Escape exits.
 - The slow-orbit button gives a continuous exterior/interior overview. Turn the roof on for an exterior tour.
+
+
+## Starting room and wall visibility
+
+New visitors start with **My little house**, based on the supplied layout JSON: queen bed, gaming desk and chair, two wardrobes, bathroom fixtures, balcony bench, plants and lamp. The three earlier furniture starter cards have been removed. Existing autosaves and named layouts still load, and importing an older layout attaches its bathroom to the nearest exterior wall.
+
+Use **Keep / hide** above the scene for each main, bathroom and interior wall. Every row offers **Keep full**, **Low wall** (64 cm), or **Hide**. The four quick choices keep only the back, left, right or front walls. Hidden walls also hide their doors/windows visually; collision and navigation continue to respect the real building. Choosing Full walls or Walls hidden overrides the display temporarily; Cutaway walls recalls the individual settings.
 
 ## Dimensions and assumptions
 
@@ -49,10 +56,10 @@ This is a design visualization, not a construction or structural model. Keep you
 
 ## Validation
 
-The V2 structural collision/JSON tests and browser-based editor acceptance checks are recorded in `VALIDATION.md`. Browser interaction testing used a mock WebGL renderer; a real GPU render and construction-level checks still require hands-on verification. The original V1 validation record is preserved separately for reference.
+The current automated tests and editor acceptance checks are recorded in `VALIDATION.md`. Interface tests use a renderer stub because the available preview browser cannot create a WebGL context. They verify editor state and real Three.js geometry, but the final GPU appearance needs verification in a browser with hardware acceleration. Historical V1 and V2 validation records remain below the current record.
 
 ## Optional source editing
 
 The ready-to-use app is already built. `src/`, `build.mjs`, `package.json`, the lockfile and tests are included for future edits.
 
-For developers only: `node build-offline.mjs` regenerates `assets/house-studio.js` directly from the included source and original licensed Three.js runtime without installing dependencies. Alternatively, run `npm ci` and `npm run build` for the regular esbuild production build. `node --test tests/structure.test.mjs` runs the new dependency-free structural tests; `npm test` runs all suites after installing dependencies. The app makes no runtime network requests. The original Three.js components remain bundled under the MIT licence.
+For developers only: `node build-offline.mjs` regenerates `assets/house-studio.js` directly from the included source and original licensed Three.js runtime without installing dependencies. Alternatively, run `npm ci` and `npm run build` for the regular esbuild production build. `node --test tests/structure.test.mjs` runs the dependency-free structural tests; `npm test` runs all suites after installing dependencies. The app makes no runtime network requests. The original Three.js components remain bundled under the MIT licence.
