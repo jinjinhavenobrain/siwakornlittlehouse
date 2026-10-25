@@ -1,6 +1,7 @@
 import {REFERENCE_LAYOUT} from './default-layout.js';
 import {VIDEO_ROOM_LAYOUT,roomStairwell,roomLadder} from './video-room.js';
 import {boundarySpecs,wallSpec,normalizeStructure,MAIN_SIDES,SIDES,FLOOR_MATERIALS} from './structure.js';
+import {STAIR_STYLES,connectionProblem,MAX_FLOORS} from './floors.js';
 export const FLOOR = .38;
 export const HOUSE = { width:4.5, depth:4.75, wall:.15, height:3, ridge:4, bathroomWidth:1.5, bathroomDepth:3, balconyDepth:1 };
 export const CATALOG = [
@@ -38,12 +39,14 @@ export const CATALOG = [
  {type:'wireChair',name:'Black woven chair',cat:'Work',w:.48,d:.52,h:.95,kind:'chair',roomModel:'chair',color:'#252723'},
  {type:'timberWardrobe',name:'Timber double wardrobe',cat:'Storage',w:1.25,d:.57,h:2.03,kind:'wardrobe',roomModel:'wardrobe',color:'#aa6936'},
  {type:'leaningShelf',name:'Leaning storage shelves',cat:'Storage',w:.85,d:.36,h:1.76,kind:'shelf',roomModel:'shelf',color:'#d4c29f'},
- {type:'laundryBasket',name:'Woven laundry basket',cat:'Decor',w:.47,d:.38,h:.4,kind:'basket',roomModel:'basket',color:'#c3a4ad'}
+ {type:'laundryBasket',name:'Woven laundry basket',cat:'Decor',w:.47,d:.38,h:.4,kind:'basket',roomModel:'basket',color:'#c3a4ad'},
+ {type:'coatRack',name:'Tree clothes rack',keywords:'cloth rack coat hanger',cat:'Decor',w:.52,d:.52,h:1.78,kind:'coatRack',color:'#b68a5e'},
+ {type:'roundTable',name:'Round wooden table',keywords:'circle desk dining',cat:'Work',w:1.10,d:1.10,h:.75,kind:'roundTable',color:'#c29b68'}
 ];
 export const definitions = Object.fromEntries(CATALOG.map(o=>[o.type,o]));
 let counter=0;
 export const uid=()=>`item-${Date.now().toString(36)}-${++counter}`;
-export function item(type,x,z,rot=0,extras={}){const def=definitions[type];return{id:uid(),type,x,z,rot,w:def.w,d:def.d,h:def.h,color:def.color,...extras};}
+export function item(type,x,z,rot=0,extras={}){const def=definitions[type];return{id:uid(),type,x,z,rot,w:def.w,d:def.d,h:def.h,color:def.color,open:false,...extras};}
 export const PRESETS=[{id:'my-little-house',name:'My little house',subtitle:'Your supplied room',image:'assets/default-layout.svg',description:'A work nook, queen bed & attached bathroom.'},{id:'video-room',name:'My room · video model',subtitle:'From your video · estimated scale',image:'assets/video-room.svg',description:'Warm timber, navy curtains & the green loft frame.'}];
 export function layoutPreset(id){if(id==='my-little-house')return validateLayout(REFERENCE_LAYOUT);if(id==='video-room')return validateLayout(VIDEO_ROOM_LAYOUT);throw new Error('Unknown room layout.');}
 export function preset(id){
@@ -68,8 +71,9 @@ wall(-.5,-3.33,3.5,.07);wall(2.15,-3.33,.2,.07);wall(-2.21,-2.875,.07,1);wall(2.
 // The two-panel front slider has a fixed right pane: about 1 m usable passage.
 wall(.5,2.30,1,.045);
 export const DOOR_ZONES=[{name:'Front door',x:0,z:2.19,w:2.0,d:.75,rot:0},{name:'Rear door',x:1.65,z:-2.18,w:.8,d:.7,rot:0},{name:'Bathroom door',x:-2.16,z:.05,w:.85,d:.8,rot:0}];
-let structural=null;
-export function setStructure(s){
+let structural=null,floorNavigation={holes:[],connections:[]};
+export function setStructure(s,navigation={holes:[],connections:[]}){
+ floorNavigation=navigation;
  structural=s;WALLS.length=0;DOOR_ZONES.length=0;
  const walls=(side)=>{const spec=wallSpec(s,side),horizontal=spec.axis==='x',{start,end,fixed}=spec;
  const holes=s.openings.filter(o=>o.side===side&&o.kind==='door').map(o=>({a:Math.max(start,o.at-o.w/2),b:Math.min(end,o.at+o.w/2)})).filter(o=>o.b>o.a).sort((a,b)=>a.a-b.a);
@@ -82,6 +86,7 @@ export function setStructure(s){
  const b=s.bounds,deck=s.balcony.depth;
  if(s.balcony.enabled!==false){WALLS.push({x:(b.left+b.right)/2-.52,z:b.back-deck+.04,w:b.right-b.left-1.05,d:.07,rot:0});for(const x of [b.left,b.right])WALLS.push({x,z:b.back-deck/2,w:.07,d:deck,rot:0});}
  if(s.room?.kind==='video-bedroom'){const hole=roomStairwell(s),ladder=roomLadder(s);WALLS.push({x:(hole.left+hole.right)/2,z:(hole.back+hole.front)/2,w:hole.right-hole.left,d:hole.front-hole.back,rot:0},{...ladder,rot:0});}
+ for(const r of [...(navigation.holes||[]),...(navigation.connections||[])])WALLS.push({x:(r.left+r.right)/2,z:(r.back+r.front)/2,w:r.right-r.left,d:r.front-r.back,rot:0});
  for(const p of s.partitions)WALLS.push({x:p.x,z:p.z,w:p.w,d:p.d,rot:p.rot||0});
 }
 
@@ -113,8 +118,10 @@ export function itemWarnings(o,items){
  if(op.some(p=>WALLS.some(w=>overlap(p,w))))warnings.push('Overlaps a wall or balcony railing.');
  if(op.some(p=>items.some(other=>other.id!==o.id&&pieces(other).some(q=>overlap(p,q)))))warnings.push('Overlaps another object.');
  if(op.some(p=>DOOR_ZONES.some(w=>overlap(p,w))))warnings.push('Occupies a door clearance zone.');
+ if(op.some(p=>(floorNavigation.landings||[]).some(r=>overlap(p,{x:(r.left+r.right)/2,z:(r.back+r.front)/2,w:r.right-r.left,d:r.front-r.back,rot:0}))))warnings.push('Occupies a stair landing. Leave this space clear.');
  if(definitions[o.type].kind==='loft')warnings.push(`Loft: mattress about ${(o.h*1.88/2.25).toFixed(2)} m high. Check ceiling, guardrails & ladder.`);
  if(Math.abs(o.x)>6||Math.abs(o.z)>6)warnings.push('Outside the illustrated garden area.');
+ if(structural?.room?.kind==='custom-room'){const b=structural.bounds;if(op.some(p=>p.x-p.w/2<b.left||p.x+p.w/2>b.right||p.z-p.d/2<b.back||p.z+p.d/2>b.front))warnings.push('Part of this item is outside the room.');if(o.h>structural.room.height)warnings.push('This item is taller than the ceiling.');}
  return warnings;
 }
 export const personRadius=height=>.30*height/1.70;
@@ -122,6 +129,7 @@ export function pointBlocked(x,z,obstacles,radius=.30){return obstacles.some(o=>
 export function navObstacles(items,height=1.7){return [...WALLS,...items.flatMap(o=>pieces(o,true,height))];}
 export function surfaceHeight(x,z){
  if(structural){const b=structural.bounds,q=structural.bathroom,deck=structural.balcony.depth;
+  if((floorNavigation.holes||[]).some(r=>x>=r.left&&x<=r.right&&z>=r.back&&z<=r.front))return FLOOR; // Navigation reserves the opening; furniture stays at this floor's elevation.
   if(structural.room?.kind==='video-bedroom'){const h=roomStairwell(structural);if(x>=h.left&&x<=h.right&&z>=h.back&&z<=h.front)return FLOOR-structural.room.stairDrop*(z-h.back)/(h.front-h.back);}
   if(x>=b.left&&x<=b.right&&z>=b.back-(structural.balcony.enabled===false?0:deck)&&z<=b.front)return FLOOR;
   if(q.enabled!==false&&x>=q.x-q.w/2&&x<=q.x+q.w/2&&z>=q.z-q.d/2&&z<=q.z+q.d/2)return FLOOR;
@@ -170,16 +178,16 @@ export function destination(action,items){
   const eff=pieces(o)[0];return [[-eff.w/2-.42,.15],[eff.w/2+.42,.15],[0,eff.d/2+.42]].map(p=>({...worldPoint(eff,...p),pose:'sleep',item:o,label:'Resting on the bed'}));
  }
  if(action==='desk'){
-  const desk=items.find(o=>['desk','gaming'].includes(definitions[o.type].kind));if(!desk)return[];
+  const desk=items.find(o=>['desk','gaming','roundTable'].includes(definitions[o.type].kind));if(!desk)return[];
   const chairs=items.filter(o=>definitions[o.type].kind==='chair').sort((a,b)=>Math.hypot(a.x-desk.x,a.z-desk.z)-Math.hypot(b.x-desk.x,b.z-desk.z));const chair=chairs[0];
   if(chair && Math.hypot(chair.x-desk.x,chair.z-desk.z)<1.8)return [[-.72,0],[.72,0],[0,.72],[0,-.72]].map(p=>({...worldPoint(chair,...p),pose:'sit',item:chair,label:'Working at the desk'}));
   return[{...worldPoint(desk,0,desk.d/2+.45),pose:'stand',label:'At the desk (add a chair to sit)'}];
  }
  return[];
 }
-export function validateLayout(data){
+export function validateLayout(data,nested=false){
  if(!data||data.format!=='house-studio-3d'||data.version!==1||!Array.isArray(data.items)||data.items.length>180)throw new Error('Not a supported House Studio layout (maximum 180 items).');
- const ids=new Set();const items=data.items.map(o=>{if(!o||!definitions[o.type]||typeof o.id!=='string'||o.id.length>100||ids.has(o.id))throw new Error('Invalid or duplicate furniture ID.');ids.add(o.id);for(const k of ['x','z','rot','w','d','h'])if(typeof o[k]!=='number'||!Number.isFinite(o[k]))throw new Error('Furniture dimensions must be finite numbers.');if(Math.abs(o.x)>6||Math.abs(o.z)>6||o.w<.1||o.w>4||o.d<.1||o.d>4||o.h<.01||o.h>3||Math.abs(o.rot)>100)throw new Error('Furniture dimensions or positions are outside the supported range.');if(!/^#[0-9a-f]{6}$/i.test(o.color))throw new Error('Invalid furniture colour.');return{id:o.id,type:o.type,x:o.x,z:o.z,rot:o.rot,w:o.w,d:o.d,h:o.h,color:o.color,open:!!o.open};});
+ const ids=new Set();const items=data.items.map(o=>{if(!o||!definitions[o.type]||typeof o.id!=='string'||o.id.length>100||ids.has(o.id))throw new Error('Invalid or duplicate furniture ID.');ids.add(o.id);for(const k of ['x','z','rot','w','d','h'])if(typeof o[k]!=='number'||!Number.isFinite(o[k]))throw new Error('Furniture dimensions must be finite numbers.');if(Math.abs(o.x)>6||Math.abs(o.z)>6||o.w<.1||o.w>4||o.d<.1||o.d>4||o.h<.01||o.h>3||Math.abs(o.rot)>100)throw new Error('Furniture dimensions or positions are outside the supported range.');if(o.type==='roundTable'&&Math.abs(o.w-o.d)>.001)throw new Error('A round table needs equal width and depth. Change its diameter.');if(!/^#[0-9a-f]{6}$/i.test(o.color))throw new Error('Invalid furniture colour.');return{id:o.id,type:o.type,x:o.x,z:o.z,rot:o.rot,w:o.w,d:o.d,h:o.h,color:o.color,open:!!o.open};});
  let structure;
  if(data.structure!==undefined){const s=data.structure;if(!s||typeof s!=='object'||!s.bounds||!s.bathroom||!s.balcony||!s.colors||!Array.isArray(s.openings)||!Array.isArray(s.partitions)||s.openings.length>40||s.partitions.length>30)throw new Error('Invalid structural layout.');
   for(const [obj,fields] of [[s.bounds,['left','right','back','front']],[s.bathroom,['x','z','w','d']],[s.balcony,['depth']]])for(const k of fields)if(!Number.isFinite(obj[k])||Math.abs(obj[k])>6)throw new Error('Invalid structural dimensions.');
@@ -194,11 +202,22 @@ export function validateLayout(data){
   if(s.finishes!==undefined){if(!s.finishes||typeof s.finishes!=='object'||Array.isArray(s.finishes))throw new Error('Invalid floor finishes.');for(const [target,f] of Object.entries(s.finishes))if(!['floor','bathFloor'].includes(target)||!f||!FLOOR_MATERIALS.some(m=>m.id===f.material)||!Number.isFinite(f.scale)||f.scale<.15||f.scale>3||!Number.isFinite(f.rotation)||Math.abs(f.rotation)>360)throw new Error('Invalid floor finish.');}
   if(s.wallVisibility!==undefined){if(!s.wallVisibility||typeof s.wallVisibility!=='object'||Array.isArray(s.wallVisibility))throw new Error('Invalid wall visibility.');for(const [key,value] of Object.entries(s.wallVisibility))if(![...SIDES,...s.partitions.map(p=>p.id)].includes(key)||!['full','low','hidden'].includes(value))throw new Error('Invalid wall visibility.');}
   for(const obj of [s.bathroom,s.balcony])if(obj.enabled!==undefined&&typeof obj.enabled!=='boolean')throw new Error('Invalid room component visibility.');
-  if(s.room!==undefined){const r=s.room,W=s.bounds.right-s.bounds.left,D=s.bounds.front-s.bounds.back;if(!r||r.kind!=='video-bedroom'||typeof r.estimated!=='boolean'||!['height','stairWidth','stairRun','stairDrop','ladderRun'].every(k=>Number.isFinite(r[k]))||r.height<2||r.height>3||r.stairWidth<.6||r.stairWidth>Math.min(2,W-.8)||r.stairRun<.8||r.stairRun>D-.8||r.stairDrop<.6||r.stairDrop>3||r.ladderRun<.5||r.ladderRun>1.5)throw new Error('Check the room height and stair/ladder dimensions.');}
+  if(s.room!==undefined){const r=s.room,W=s.bounds.right-s.bounds.left,D=s.bounds.front-s.bounds.back;if(!r||!['video-bedroom','custom-room'].includes(r.kind)||typeof r.estimated!=='boolean'||!Number.isFinite(r.height)||r.height<2||r.height>3)throw new Error('Use a ceiling height from 2 to 3 metres.');if(r.kind==='video-bedroom'&&(!['stairWidth','stairRun','stairDrop','ladderRun'].every(k=>Number.isFinite(r[k]))||r.stairWidth<.6||r.stairWidth>Math.min(2,W-.8)||r.stairRun<.8||r.stairRun>D-.8||r.stairDrop<.6||r.stairDrop>3||r.ladderRun<.5||r.ladderRun>1.5))throw new Error('Check the stair and ladder dimensions.');}
   if(s.room&&s.openings.some(o=>o.sill+o.h>s.room.height+.001))throw new Error('Lower the existing window or door opening before reducing the ceiling below it.');
   structure=normalizeStructure(s);
-  const q=structure.bathroom;if(Math.max(Math.abs(q.x-q.w/2),Math.abs(q.x+q.w/2),Math.abs(q.z-q.d/2),Math.abs(q.z+q.d/2))>6)throw new Error('The attached bathroom must stay within the 12 m planning area.');
+  const q=structure.bathroom;if(q.enabled!==false&&Math.max(Math.abs(q.x-q.w/2),Math.abs(q.x+q.w/2),Math.abs(q.z-q.d/2),Math.abs(q.z+q.d/2))>6)throw new Error('The attached bathroom must stay within the 12 m planning area.');
   if(Object.values(structure.wallSplits).some(points=>points.length>12))throw new Error('Maximum 12 split points per exterior wall.');
  }
- return{format:'house-studio-3d',version:1,name:typeof data.name==='string'?data.name.slice(0,60):'Imported layout',preset:PRESETS.some(p=>p.id===data.preset)?data.preset:'custom',items,...(structure?{structure}:{})};
+ const result={format:'house-studio-3d',version:1,name:typeof data.name==='string'?data.name.slice(0,60):'Imported layout',preset:PRESETS.some(p=>p.id===data.preset)?data.preset:'custom',items,...(structure?{structure}:{})};
+ if(data.floors!==undefined){
+  if(nested||!Array.isArray(data.floors)||data.floors.length<1||data.floors.length>MAX_FLOORS||!structure)throw new Error('Use one to four floors.');
+  const seen=new Set();result.activeFloorId=data.activeFloorId;
+  result.floors=data.floors.map(f=>{if(!f||typeof f.id!=='string'||!/^floor-[a-z0-9-]{1,50}$/.test(f.id)||seen.has(f.id)||typeof f.name!=='string'||!f.name.trim())throw new Error('Invalid floor name or ID.');seen.add(f.id);const checked=validateLayout({format:result.format,version:1,name:f.name,items:f.id===data.activeFloorId?items:f.items,structure:f.id===data.activeFloorId?structure:f.structure},true);if(!checked.structure)throw new Error('Every floor needs a room.');return{id:f.id,name:f.name.slice(0,40),items:checked.items,structure:checked.structure};});
+  if(!seen.has(result.activeFloorId))throw new Error('Choose an existing floor.');
+  if(!Array.isArray(data.stairs)||data.stairs.length>12)throw new Error('Invalid floor connections.');const linkIds=new Set();
+  result.stairs=data.stairs.map(l=>{if(!l||typeof l.id!=='string'||!/^stairs-[a-z0-9-]{1,60}$/.test(l.id)||linkIds.has(l.id)||!STAIR_STYLES.some(s=>s.id===l.style)||!['x','z','w','run','rot'].every(k=>Number.isFinite(l[k]))||Math.abs(l.x)>6||Math.abs(l.z)>6||l.w<.5||l.w>3||l.run<.4||l.run>5||Math.abs(l.rot)>Math.PI*2+.001||Math.abs(l.rot/(Math.PI/2)-Math.round(l.rot/(Math.PI/2)))>.001||!/^#[0-9a-f]{6}$/i.test(l.color))throw new Error('Invalid stair or ladder dimensions.');linkIds.add(l.id);return{id:l.id,from:l.from,to:l.to,style:l.style,x:l.x,z:l.z,w:l.w,run:l.run,rot:l.rot,color:l.color};});
+  for(const link of result.stairs){const problem=connectionProblem(result,link,{furniture:false});if(problem)throw new Error(problem);}
+  for(let i=1;i<result.floors.length;i++)if(!result.stairs.some(l=>l.from===result.floors[i-1].id&&l.to===result.floors[i].id))throw new Error('Each upper floor needs stairs or a ladder.');
+ }
+ return result;
 }

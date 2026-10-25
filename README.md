@@ -1,4 +1,4 @@
-# House Studio 3D — V4 room models
+# House Studio 3D — V5 room creator
 
 ## Open your house
 
@@ -8,11 +8,29 @@
 
 Keep `index.html`, `style.css` and the `assets` folder together.
 
+## Create a room from scratch
+
+New visitors see a simple room-size setup. Returning visitors keep their current autosave and can choose **Start from scratch** at any time. Enter a project name, width, length and ceiling height, or use a suggested size. The result is an empty room without inferred furniture, doors, bathroom or balcony. Room width and length support 2–10 m; ceiling height supports 2–3 m. Build exposes simple width/length controls first; exact wall coordinates are under Advanced wall positions.
+
+The Rooms panel walks through shaping the room, decorating it and adding an upper floor. Doors and windows start on different walls and additional openings are placed in a free interval. All sizes use metres. Project names are preserved when furniture is added.
+
+## Connect multiple floors
+
+Use **Build → Floors, stairs & ladders**, or **Add / manage floors** beside the floor tabs. Choose one of eight styles: wooden stairs, open timber stairs, floating stairs, L-shaped stairs, spiral stairs, wooden loft ladder, metal loft ladder or space-saving alternating steps. **Add floor** adds an empty upper room and fits the selected connection into a clear space on both floors. Interior dividers can optionally be copied.
+
+Projects support up to four floors. Each floor has its own name, furniture, walls, openings, finish and ceiling height. Floor tabs isolate a room for editing. **View whole house** stacks the actual geometry, including furniture, at the ceiling height plus a 20 cm slab. Upper-floor and ceiling openings follow the connection, with illustrative guardrails. Style changes and rotations find another clear position if necessary; width, floor space, position and color remain editable. The top floor can be removed with undo available. Undo/redo, autosave, named copies and JSON exports include the entire project. Version 1 single-room saves remain compatible.
+
+Connection placement reserves a 50 cm conceptual landing at both ends and avoids furniture, partitions, entrances and adjacent flights. This is a planning aid, not a minimum code-compliant landing specification. Blocky explores one selected floor; inter-floor walking and ladder climbing are not simulated.
+
+## New decoration
+
+The **Tree clothes rack** follows the reference's round base, wooden pole, branches and circular tray. The **Round wooden table** has a circular slatted top and timber base. Select it and drag **Round tabletop** to change the top diameter live; precise diameter and height controls are separate. The top stays circular and the base is proportioned independently. Both items can be moved, rotated, duplicated, recolored and saved like other furniture.
+
 ## Four modes
 
-- **Explore:** rotate, zoom and pan. Switch between 3D, plan, front and rear views; show/hide roof and walls; restore the supplied room; choose daylight, sunset or evening.
+- **Rooms:** start a new empty room, follow the three starter steps, or rotate, zoom and pan. Switch between 3D, plan, front and rear views; show/hide roof and walls; restore the supplied room; choose daylight, sunset or evening.
 - **Build:** choose a floor or structural element in the model or component list. Main and bathroom floors have eight finishes: veined marble, natural stone, wood planks, herringbone wood, matt porcelain, microcement, terrazzo and ceramic tiles. Change the tint, tile/pattern size and direction independently; the pattern stays intact when recolored. Select an exterior wall and split it using a distance from the section start, or use **Split wall** and click a point in 3D or Plan. Each section has its own color. Select a section and choose **Extend section as bathroom**; its length and outward depth are editable and it stays attached when the house wall moves. The shared connection is one wall with one doorway, rather than overlapping shells. **Draw wall** uses two clicks in Plan to add an interior partition. Doors, windows and partitions remain individually editable. All edits are included in undo, named layouts and JSON exports.
-- **Decorate:** add from the 35-item catalogue. Drag furniture, adjust exact sizes and positions, rotate, duplicate or delete. R rotates; arrows nudge; Delete removes. Ctrl+Z / Ctrl+Y undo and redo. A red selection box and inspector warnings mark overlaps. The 10 cm snap can be disabled.
+- **Decorate:** add from the 37-item catalogue. Drag furniture, adjust exact sizes and positions, rotate, duplicate or delete. R rotates; arrows nudge; Delete removes. Ctrl+Z / Ctrl+Y undo and redo. A red selection box and inspector warnings mark overlaps. The 10 cm snap can be disabled.
 - **Simulate:** click a floor location or use bed, desk, bathroom, balcony and entrance actions. Blocky has exactly six rectangular parts and uses pathfinding. Daily routine cycles through destinations. Adjust height from 150–195 cm, follow the person and check destination access.
 
 An unfolded sofa bed takes additional space. Loft beds include a ladder; desks underneath are separate movable objects. Furniture can also be placed outside. Bathroom fixtures are editable like other furniture.
@@ -20,7 +38,7 @@ An unfolded sofa bed takes additional space. Loft beds include a ladder; desks u
 ## Keep and share ideas
 
 - Changes autosave in the current browser, subject to its local-file storage support.
-- **Layouts** saves named copies. Restoring the supplied room can be undone. Existing browser autosaves are preserved; choose **My little house** under Explore to restore the supplied reference room.
+- **Layouts** saves named copies. Restoring the supplied room can be undone. Existing browser autosaves are preserved; choose **My little house** under Rooms to restore the supplied reference room.
 - **Export JSON** is your portable backup. Import it to another browser or computer.
 - The camera button exports a PNG of the 3D scene. **Present** hides the editing panels; Escape exits.
 - The slow-orbit button gives a continuous exterior/interior overview. Turn the roof on for an exterior tour.
@@ -28,7 +46,7 @@ An unfolded sofa bed takes additional space. Loft beds include a ladder; desks u
 
 ## Room reconstructed from video
 
-Explore now has two room models. **My little house** remains the original supplied house. **My room · video model** is a separate bedroom reconstruction with an estimated 3.90 × 4.60 m footprint and 2.48 m ceiling. It includes the visible timber floor and bed, blue bedding, dark back-wall paneling, wooden desk and wardrobe, woven chair, navy curtains, storage shelves, basket, green loft ladder and framing, and an actual cutout with descending stairs. The original recording and extracted photographs are not distributed with the app.
+Rooms also offers two reference models. **My little house** remains the original supplied house. **My room · video model** is a separate bedroom reconstruction with an estimated 3.90 × 4.60 m footprint and 2.48 m ceiling. It includes the visible timber floor and bed, blue bedding, dark back-wall paneling, wooden desk and wardrobe, woven chair, navy curtains, storage shelves, basket, green loft ladder and framing, and an actual cutout with descending stairs. The original recording and extracted photographs are not distributed with the app. This reference represents one level of the two-floor room; use the floor creator to add editable levels and new connections.
 
 The new furniture is editable in Decorate. Build → Main floor edits the footprint and ceiling height; the estimate label remains until you confirm that measured dimensions have been entered. Build also has loft and stair-opening controls. **Ceiling on** reveals the overhead green joists, infill and hatch. The front and left ceiling edge beams follow the wall cutaway so they do not hide the furniture.
 
@@ -36,7 +54,7 @@ The bed, desk and stair landing support the existing walking simulation. The sta
 
 ## Starting room and wall visibility
 
-New visitors start with **My little house**, based on the supplied layout JSON: queen bed, gaming desk and chair, two wardrobes, bathroom fixtures, balcony bench, plants and lamp. The three earlier furniture starter cards have been removed. Existing autosaves and named layouts still load, and importing an older layout attaches its bathroom to the nearest exterior wall.
+**My little house** is available as a starting room based on the supplied layout JSON: queen bed, gaming desk and chair, two wardrobes, bathroom fixtures, balcony bench, plants and lamp. The three earlier furniture starter cards have been removed. Existing autosaves and named layouts still load, and importing an older layout attaches its bathroom to the nearest exterior wall.
 
 Use **Keep / hide** above the scene for each main, bathroom and interior wall. Every row offers **Keep full**, **Low wall** (64 cm), or **Hide**. The four quick choices keep only the back, left, right or front walls. Hidden walls also hide their doors/windows visually; collision and navigation continue to respect the real building. Choosing Full walls or Walls hidden overrides the display temporarily; Cutaway walls recalls the individual settings.
 

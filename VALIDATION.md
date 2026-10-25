@@ -1,3 +1,13 @@
+# V5 room-creator validation — 2026-10-25
+
+The automated suite passes 42 tests. New coverage includes empty projects and room sizing, the default four-metre room fitting its default stairs, the ten-metre size limit, all eight stair and ladder geometries, matching slab openings, floor elevations, independent furniture/finishes/height/name persistence, four-floor limits, top-floor removal, invalid inactive-floor and connection imports, navigation reservations, and circular tabletop sizing. All earlier supplied-room and video-model tests remain.
+
+A DOM acceptance harness runs the actual application source with real Three.js geometry, real canvas floor textures, and an explicitly stubbed WebGL renderer. It verifies first-visit setup; new projects; simple room dimensions; non-overlapping door/window placement; live tabletop resizing and undo; clothes-rack placement; two separately furnished floors; style conversion, color and rotation; whole-house geometry at two actual elevations; four-floor creation; removal and undo; and full JSON export/import. The earlier editor acceptance harness also passes.
+
+The actual stacked scene geometry was inspected using a software depth-buffer diagnostic. Both the dependency-free offline bundle and regular production bundle pass syntax checks. The preview browser still cannot create a WebGL context. Final GPU appearance and mobile touch interaction remain unverified. Blocky explores a selected floor, without simulating inter-floor climbing. Stairs, guardrails and landings are conceptual visualization geometry.
+
+---
+
 # V4 video-room validation — 2026-10-25
 
 `npm test` passes all 33 tests. New tests cover the independent video room, estimated dimensions, six additional furniture types (35 total), disabled bathroom/balcony topology, a floor cutout matching the stairwell, conservative ladder/stair navigation, overlap-free initial furniture, reachable bed/desk/landing, JSON persistence and invalid reconstruction settings. The earlier tests remain in place.

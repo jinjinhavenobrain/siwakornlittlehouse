@@ -2,6 +2,7 @@ import * as T from 'three';
 import {FLOOR,uid} from './core.js';
 import {MAIN_SIDES,SIDES,SIDE_LABELS,OPPOSITE,wallSpec,wallSegments,findWallSegment,splitWall,extendBathroom,structuralIssues,FLOOR_MATERIALS,sharedBathSide} from './structure.js';
 import {finishPreview} from './finishes.js';
+import {resizeFootprint} from './floors.js';
 
 export function createBuildEditor(api){
  const {$,$$,escapeHTML:esc}=api;
@@ -12,7 +13,7 @@ export function createBuildEditor(api){
  const number=(key,label,value,min=-6,max=6,step=.05)=>`<label class="field-label">${label}<input type="number" data-build-field="${key}" min="${min}" max="${max}" step="${step}" value="${Number(value).toFixed(3).replace(/0+$/,'').replace(/\.$/,'')}"></label>`;
  const color=(key,label,value)=>`<label class="field-label">${label}<input type="color" data-build-color="${key}" value="${value}"></label>`;
  const button=(id,label,cls='secondary')=>`<button id="${id}" class="btn ${cls} wide">${label}</button>`;
- function select(id){selected=id;cancelTool();render();}
+ function select(id){if(id.startsWith('connection:')){api.selectConnection?.(id.slice(11));return;}selected=id;cancelTool();render();}
  function line(points){guide.geometry.dispose();guide.geometry=new T.BufferGeometry().setFromPoints(points.map(p=>new T.Vector3(p.x,p.y??FLOOR+.035,p.z)));guide.visible=true;}
  function markSegment(v){const x=v.axis==='x',a={x:x?v.start:v.fixed,z:x?v.fixed:v.start},b={x:x?v.end:v.fixed,z:x?v.fixed:v.end};line([a,b,{...b,y:FLOOR+3.02},{...a,y:FLOOR+3.02},a]);}
  function cancelTool(){tool=null;drawingStart=null;guide.visible=false;api.controls.enabled=true;api.renderer.domElement.style.cursor='';$('#buildToolHint').hidden=true;$('#splitWallTool').classList.remove('active');$('#addPartition').classList.remove('active');}
@@ -32,12 +33,12 @@ export function createBuildEditor(api){
  function render(){
   const s=structure(),b=s.bounds,q=s.bathroom,part=s.openings.find(o=>o.id===selected)||s.partitions.find(p=>p.id===selected),seg=findWallSegment(s,selected);
   const row=(id,label,sub=false)=>`<button data-build-select="${esc(id)}" class="${selected===id?'active ':''}${sub?'segment-row':''}"><span>${esc(label)}</span><small>${selected===id?'EDITING':'→'}</small></button>`;
-  $('#buildList').innerHTML=row('floor','Main floor / footprint')+MAIN_SIDES.map(side=>row(side+'-wall',SIDE_LABELS[side]+' wall')+(wallSegments(s,side).length>1?wallSegments(s,side).map(v=>row(v.id,`Section ${v.index+1} · ${(v.end-v.start).toFixed(2)} m`,true)).join(''):'')).join('')+(q.enabled===false?'':row('bathroom','Attached bathroom'))+(s.balcony.enabled===false?'':row('balcony','Balcony'))+(s.room?row('loft','Green loft frame & ceiling')+row('stairwell','Stair opening'):row('roof','Main roof')+row('bath-roof','Bathroom roof')+row('garden','Garden / surroundings'))+s.openings.map(o=>row(o.id,`${o.kind==='door'?'Door':'Window'} · ${o.side}`)).join('')+s.partitions.map((p,i)=>row(p.id,`Interior wall ${i+1}`)).join('');
+  $('#buildList').innerHTML=row('floor','Room size & floor finish')+MAIN_SIDES.map(side=>row(side+'-wall',SIDE_LABELS[side]+' wall')+(wallSegments(s,side).length>1?wallSegments(s,side).map(v=>row(v.id,`Section ${v.index+1} · ${(v.end-v.start).toFixed(2)} m`,true)).join(''):'')).join('')+(q.enabled===false?'':row('bathroom','Attached bathroom'))+(s.balcony.enabled===false?'':row('balcony','Balcony'))+(s.room?.kind==='video-bedroom'?row('loft','Green loft frame & ceiling')+row('stairwell','Stair opening'):s.room?row('ceiling','Ceiling'):row('roof','Main roof')+row('bath-roof','Bathroom roof')+row('garden','Garden / surroundings'))+s.openings.map(o=>row(o.id,`${o.kind==='door'?'Door':'Window'} · ${o.side}`)).join('')+s.partitions.map((p,i)=>row(p.id,`Interior wall ${i+1}`)).join('');
   $$('[data-build-select]').forEach(el=>el.onclick=()=>select(el.dataset.buildSelect));
   $('#buildPalette').innerHTML=Object.entries(paletteLabels).filter(([key])=>s.colors[key]&&!(q.enabled===false&&['bathWall','bathFloor','bathRoof'].includes(key))&&!(s.balcony.enabled===false&&['balcony','rail'].includes(key))&&!(s.room&&key==='garden')).map(([key,label])=>`<label><input type="color" value="${s.colors[key]}" data-palette="${key}"><span>${label}</span></label>`).join('');
   $$('[data-palette]').forEach(el=>el.onchange=()=>api.edit(s=>s.colors[el.dataset.palette]=el.value));
   let title='',content='',floorTarget=null;
-  if(selected==='floor'){title='Main floor';floorTarget='floor';content=floorControls('floor')+'<div class="editor-divider"></div><h3>Room footprint</h3>'+`<div class="row">${number('bounds.left','Left X',b.left,-5,2)}${number('bounds.right','Right X',b.right,-2,5)}</div><div class="row">${number('bounds.back','Back Z',b.back,-5,2)}${number('bounds.front','Front Z',b.front,-2,5)}</div><p class="small-note">${(b.right-b.left).toFixed(2)} × ${(b.front-b.back).toFixed(2)} m. ${s.room?'Estimated from video until you enter measured dimensions.':'The attached bathroom follows its wall.'}</p>${s.room?number('room.height','Ceiling / loft height · m',s.room.height,2,3,.05)+'<label class="measured-check"><input id="dimensionsConfirmed" type="checkbox" '+(s.room.estimated?'':'checked')+'> I have entered measured dimensions</label>':''}`;}
+  if(selected==='floor'){title='Room size & floor';floorTarget='floor';content=`<h3>How big is your room?</h3><div class="row">${number('footprint.width','Width · m',b.right-b.left,2,10,.1)}${number('footprint.depth','Length · m',b.front-b.back,2,10,.1)}</div>${s.room?number('room.height','Ceiling height · m',s.room.height,2,3,.05):''}${s.room?.kind==='video-bedroom'?'<label class="measured-check"><input id="dimensionsConfirmed" type="checkbox" '+(s.room.estimated?'':'checked')+'> I have entered measured dimensions</label>':''}<p class="small-note">Use metres. Furniture stays where you put it when you resize the room.</p><details class="advanced-fields"><summary>Advanced wall positions</summary><div class="row">${number('bounds.left','Left X',b.left,-5,2)}${number('bounds.right','Right X',b.right,-2,5)}</div><div class="row">${number('bounds.back','Back Z',b.back,-5,2)}${number('bounds.front','Front Z',b.front,-2,5)}</div></details><div class="editor-divider"></div>`+floorControls('floor');}
   else if(seg||MAIN_SIDES.some(side=>selected===side+'-wall')){
    const side=seg?.side||selected.replace('-wall',''),v=seg||wallSpec(s,side);title=SIDE_LABELS[side]+(seg?` wall · section ${seg.index+1}`:' wall');
    content=`<p class="small-note">${(v.end-v.start).toFixed(2)} m along the ${SIDE_LABELS[side].toLowerCase()} wall${seg?'. This section has its own color and can become the bathroom extension.':'. Move the wall to resize the house.'}</p>`;
@@ -47,8 +48,9 @@ export function createBuildEditor(api){
   }
   else if(selected==='bathroom'){title='Attached bathroom';floorTarget='bathFloor';const v=wallSpec(s,q.side);content=`<p class="attachment-note">Attached to the ${SIDE_LABELS[q.side].toLowerCase()} wall · ${(q.end-q.start).toFixed(2)} m section</p><p class="small-note">Resize the section and outward depth here. To attach it elsewhere, split an exterior wall and choose a section.</p><div class="row">${number('bathroom.start','Section start · '+v.axis.toUpperCase(),q.start,v.start,v.end-.8)}${number('bathroom.end','Section end · '+v.axis.toUpperCase(),q.end,v.start+.8,v.end)}</div>${number('bathroom.depth','Outward depth · m',q.depth,.8,4,.1)}${color('colors.bathWall','Bathroom walls',s.colors.bathWall)}<div class="editor-divider"></div>${floorControls('bathFloor')}`;}
   else if(selected.startsWith('bath-')&&selected.endsWith('-wall')){title='Bathroom '+selected.replace('bath-','').replace('-wall','')+' wall';content=color('colors.bathWall','Bathroom walls',s.colors.bathWall)+button('editBathFloor','Edit bathroom floor');}
-  else if(selected==='loft'&&s.room){title='Green loft frame';content='<p class="attachment-note">Beams, ladder and hatch from the video. Switch Ceiling on to see the overhead infill.</p>'+number('room.height','Ceiling / loft height · m',s.room.height,2,3,.05)+number('room.ladderRun','Ladder horizontal run · m',s.room.ladderRun,.5,1.5,.05)+color('colors.roof','Green frame color',s.colors.roof);}
-  else if(selected==='stairwell'&&s.room){title='Stair opening';content='<p class="small-note">The opening and descending steps are estimated from the video. The person stops at the landing; stair climbing is not simulated.</p>'+number('room.stairWidth','Opening width · m',s.room.stairWidth,.6,2,.05)+number('room.stairRun','Opening length · m',s.room.stairRun,.8,4,.05)+number('room.stairDrop','Visible stair drop · m',s.room.stairDrop,.6,3,.05);}
+  else if(selected==='loft'&&s.room?.kind==='video-bedroom'){title='Green loft frame';content='<p class="attachment-note">Beams, ladder and hatch from the video. Switch Ceiling on to see the overhead infill.</p>'+number('room.height','Ceiling / loft height · m',s.room.height,2,3,.05)+number('room.ladderRun','Ladder horizontal run · m',s.room.ladderRun,.5,1.5,.05)+color('colors.roof','Green frame color',s.colors.roof);}
+  else if(selected==='stairwell'&&s.room?.kind==='video-bedroom'){title='Stair opening';content='<p class="small-note">The opening and descending steps are estimated from the video. The person stops at the landing; stair climbing is not simulated.</p>'+number('room.stairWidth','Opening width · m',s.room.stairWidth,.6,2,.05)+number('room.stairRun','Opening length · m',s.room.stairRun,.8,4,.05)+number('room.stairDrop','Visible stair drop · m',s.room.stairDrop,.6,3,.05);}
+  else if(selected==='ceiling'&&s.room){title='Ceiling';content=number('room.height','Ceiling height · m',s.room.height,2,3,.05)+color('colors.roof','Ceiling color',s.colors.roof)+'<p class="small-note">Turn Ceiling on above the scene to see it. Openings follow your stairs automatically.</p>';}
   else if(selected==='balcony'){title='Back balcony';content=number('balcony.depth','Depth',s.balcony.depth,.5,3)+color('colors.balcony','Deck color',s.colors.balcony)+color('colors.rail','Rail color',s.colors.rail);}
   else if(selected==='roof'||selected==='bath-roof'){title=selected==='roof'?'Main roof':'Bathroom roof';const key=selected==='roof'?'roof':'bathRoof';content=color('colors.'+key,'Roof color',s.colors[key]);}
   else if(selected==='garden'){title='Garden';content=color('colors.garden','Ground color',s.colors.garden);}
@@ -61,9 +63,11 @@ export function createBuildEditor(api){
    const [group,key]=el.dataset.buildField.split('.'),value=el.tagName==='SELECT'&&group==='opening'?el.value:Number(el.value);
    if(typeof value==='number'&&(!Number.isFinite(value)||(el.min!==''&&value<Number(el.min))||(el.max!==''&&value>Number(el.max)))){api.toast('Check the allowed dimension range.');render();return;}
    api.edit(s=>{
+    if(group==='footprint'){resizeFootprint(s,key,value);return;}
     if(group==='bathroom'){const q=s.bathroom;extendBathroom(s,q.side,key==='start'?value:q.start,key==='end'?value:q.end,key==='depth'?value:q.depth);return;}
     const target=group==='finish'?s.finishes[floorTarget]:group==='opening'?s.openings.find(o=>o.id===selected):group==='partition'?s.partitions.find(p=>p.id===selected):s[group];
     if(!target)return;if(key==='deg')target.rot=value*Math.PI/180;else target[key]=value;
+    if(group==='room'&&key==='height')for(const p of s.partitions)p.h=Math.min(p.h,value);
     if(group==='opening'&&key==='side'){const v=wallSpec(s,value);target.at=Math.min(v.end-target.w/2-.1,Math.max(v.start+target.w/2+.1,target.at));}
    });
   });
@@ -76,8 +80,15 @@ export function createBuildEditor(api){
   if($('#deleteStructure'))$('#deleteStructure').onclick=()=>{api.edit(s=>{s.openings=s.openings.filter(o=>o.id!==selected);s.partitions=s.partitions.filter(p=>p.id!==selected);delete s.wallVisibility[selected];});selected='floor';render();};
  }
  $('#splitWallTool').onclick=()=>beginTool('split');$('#addPartition').onclick=()=>beginTool('draw');$('#cancelBuildTool').onclick=cancelTool;
- for(const kind of ['Door','Window'])$('#add'+kind).onclick=()=>{const s=structure();if(s.openings.length>=40){api.toast('Maximum 40 openings.');return;}const seg=findWallSegment(s,selected),side=seg?.side||(MAIN_SIDES.includes(selected.replace('-wall',''))?selected.replace('-wall',''):'front'),v=seg||wallSpec(s,side),id=`${kind.toLowerCase()}-${Date.now().toString(36)}`;if(api.edit(s=>s.openings.push({id,kind:kind.toLowerCase(),side,at:(v.start+v.end)/2,w:kind==='Door'?.8:1,h:kind==='Door'?2:1.1,sill:kind==='Door'?0:1})))select(id);};
- $('#resetStructure').onclick=()=>{if(!confirm('Restore the supplied house structure and finishes? Your furniture stays. Undo is available.'))return;api.edit(s=>Object.assign(s,api.cloneStructure()));select('floor');};
+ for(const kind of ['Door','Window'])$('#add'+kind).onclick=()=>{
+  const s=structure();if(s.openings.length>=40){api.toast('Maximum 40 openings.');return;}
+  const seg=findWallSegment(s,selected),side=seg?.side||(MAIN_SIDES.includes(selected.replace('-wall',''))?selected.replace('-wall',''):kind==='Window'?'back':'front'),v=seg||wallSpec(s,side),id=`${kind.toLowerCase()}-${Date.now().toString(36)}`,w=kind==='Door'?.8:1;
+  const candidates=[(v.start+v.end)/2];for(let at=v.start+w/2+.15;at<=v.end-w/2-.14;at+=.1)candidates.push(at);
+  const at=candidates.find(at=>!s.openings.some(o=>o.side===side&&Math.abs(o.at-at)<(o.w+w)/2+.15));
+  if(at===undefined){api.toast('This wall is full. Select another wall to add an opening.');return;}
+  if(api.edit(s=>s.openings.push({id,kind:kind.toLowerCase(),side,at,w,h:kind==='Door'?2:1.1,sill:kind==='Door'?0:Math.min(1,(s.room?.height||3)-1.1)})))select(id);
+ };
+ $('#resetStructure').onclick=()=>{api.edit(s=>{const next=api.cloneStructure();for(const key of Object.keys(s))delete s[key];Object.assign(s,next);});select('floor');api.toast('Structure reset. Undo is available.');};
  api.renderer.domElement.addEventListener('pointerdown',e=>{
   if(api.getMode()!=='build'||e.button!==0||api.getMeasure())return;
   if(tool){e.stopImmediatePropagation();e.preventDefault();api.controls.enabled=false;api.renderer.domElement.setPointerCapture(e.pointerId);return;}
@@ -102,9 +113,9 @@ export function createBuildEditor(api){
    else {const p=snapped(e);if(!p)return;if(!drawingStart){drawingStart=p;$('#buildToolText').textContent='Start set. Click the end of the new wall.';}else {const length=Math.hypot(p.x-drawingStart.x,p.z-drawingStart.z);if(length<.25||length>6){api.toast('Draw a wall between 0.25 and 6 m long.');return;}const a=drawingStart,id=uid();if(api.edit(s=>s.partitions.push({id,x:(a.x+p.x)/2,z:(a.z+p.z)/2,w:length,d:.15,h:s.room?.height||3,rot:-Math.atan2(p.z-a.z,p.x-a.x),color:s.colors.wall})))select(id);}}
    return;
   }
-  if(dragging&&e.pointerId===dragging.pointer){if(dragging.started){state().preset='custom';api.commit();}dragging=null;api.controls.enabled=true;}
+  if(dragging&&e.pointerId===dragging.pointer){if(dragging.started){state().preset='custom';api.finishDrag(dragging.before);}dragging=null;api.controls.enabled=true;}
  },true);
- api.renderer.domElement.addEventListener('pointercancel',()=>{dragging=null;api.controls.enabled=true;});
+ api.renderer.domElement.addEventListener('pointercancel',()=>{if(dragging?.started)api.finishDrag(dragging.before,true);dragging=null;api.controls.enabled=true;});
  window.addEventListener('keydown',e=>{if(e.key==='Escape'&&tool){cancelTool();render();}});
  return {render,cancelTool,select};
 }

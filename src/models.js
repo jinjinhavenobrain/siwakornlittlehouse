@@ -19,7 +19,19 @@ function legs(g,w,d,h,color='#b59a72',size=.05){for(const x of [-w/2+.055,w/2-.0
 export function furnitureModel(o){
  const def=definitions[o.type],kind=def.kind,g=new T.Group(),w=def.w,d=def.d,h=def.h,c=o.color,wood='#bda17a',dark='#37433f',linen='#ecebdc';
  g.userData.itemId=o.id;
- if(def.roomModel){videoFurniture(g,o,def,{box,cylinder,rod,mat});}
+ if(kind==='coatRack'){
+  cylinder(g,.255,.255,.035,0,.022,0,c,48);cylinder(g,.025,.034,h-.04,0,h/2,0,c,20);
+  for(let i=0;i<7;i++){const a=i*2.4,y=.90+i*.115,x=Math.cos(a)*.225,z=Math.sin(a)*.225;rod(g,[0,y,0],[x,y+.19,z],.017,c);cylinder(g,.020,.020,.025,x,y+.20,z,c,12);}
+  const tray=new T.Mesh(new T.TorusGeometry(.155,.012,8,32),mat(c));tray.rotation.x=Math.PI/2;tray.position.y=.61;g.add(tray);cylinder(g,.155,.155,.018,0,.60,0,c,32);
+ }else if(kind==='roundTable'){
+  // Only the circular top follows the diameter. The base keeps realistic proportions.
+  const radius=o.w/2,base=Math.min(.52,o.w*.74),top=.75;
+  cylinder(g,radius,radius,.045,0,top-.0225,0,c,64);
+  for(let z=-radius+.045;z<radius-.025;z+=.105){const length=2*Math.sqrt(Math.max(0,radius*radius-z*z))-.02;if(length>0)box(g,length,.0012,.003,0,top+.001,z,'#a1825c');}
+  for(const x of [-base*.38,base*.38])for(const z of [-base*.38,base*.38])box(g,.045,.675,.045,x,.36,z,c,.008);
+  box(g,base+.07,.045,.055,0,.065,0,c,.012);box(g,.055,.045,base+.07,0,.09,0,c,.012);
+  for(const z of [-base*.38,base*.38])box(g,base*.8,.045,.045,0,.20,z,c,.008);
+ }else if(def.roomModel){videoFurniture(g,o,def,{box,cylinder,rod,mat});}
  else if(kind==='bed'||kind==='loft'){
   const loft=kind==='loft',top=loft?1.88:.55,base=top-.25;
   if(loft){for(const x of [-w/2+.045,w/2-.045])for(const z of [-d/2+.045,d/2-.045])box(g,.09,2.25,.09,x,1.125,z,c,.008);box(g,w,.09,.07,0,2.2,-d/2,c);for(const x of [-w/2,w/2]){box(g,.065,.07,d,x,2.2,0,c);box(g,.04,.07,d,x,2.04,0,c);}box(g,w-.44,.07,.07,-.22,2.2,d/2,c);for(let y=.16;y<1.9;y+=.25)box(g,.34,.04,.08,w/2-.23,y,d/2+.19,c);for(const x of [w/2-.41,w/2-.05])rod(g,[x,.02,d/2+.4],[x,1.94,d/2+.02],.025,c);}
@@ -71,7 +83,7 @@ export function furnitureModel(o){
  }else if(kind==='lamp'){
   cylinder(g,.14,.15,.035,0,.02,0,dark);cylinder(g,.014,.014,h-.2,0,(h-.2)/2,0,dark);cylinder(g,.11,.17,.27,0,h-.16,0,c);cylinder(g,.15,.15,.009,0,h-.295,0,'#fff3cc');
  }
- g.scale.set(o.w/w,o.h/h,o.d/d);g.position.set(o.x,surfaceHeight(o.x,o.z)+.015,o.z);g.rotation.y=o.rot;return g;
+ g.scale.set(kind==='roundTable'?1:o.w/w,o.h/h,kind==='roundTable'?1:o.d/d);g.position.set(o.x,surfaceHeight(o.x,o.z)+.015,o.z);g.rotation.y=o.rot;return g;
 }
 
 export function buildHouse(scene){
