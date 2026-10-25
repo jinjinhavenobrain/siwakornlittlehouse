@@ -1,3 +1,13 @@
+# V4 video-room validation — 2026-10-25
+
+`npm test` passes all 33 tests. New tests cover the independent video room, estimated dimensions, six additional furniture types (35 total), disabled bathroom/balcony topology, a floor cutout matching the stairwell, conservative ladder/stair navigation, overlap-free initial furniture, reachable bed/desk/landing, JSON persistence and invalid reconstruction settings. The earlier tests remain in place.
+
+The actual source also passed the DOM acceptance harness with real Three.js geometry and an explicitly stubbed renderer. In addition to the previous editor flows, it checks both model choices, video room loading, floor/ceiling/stair/frame edits, confirmation of measured dimensions, absence of inferred bathroom/balcony components, ceiling display, model switching and undo, profile-aware structure reset, export, and destination checks. It caught and repaired an indoor spawn falling back outside the room. JavaScript syntax checks, the dependency-free offline builder and the normal production builder pass.
+
+A separate software depth-buffer render of the real scene geometry was inspected for furniture placement, stairs, paneling, curtains, the loft frame and the opening camera. This diagnostic omits GPU shadows and material reflections. The cloud preview browser still reports that WebGL is unavailable, so final GPU appearance and mobile pointer interaction remain unverified.
+
+---
+
 # V3 validation record — 2026-10-24
 
 `npm test` passes all 29 tests. New coverage verifies the supplied default furniture, reachable destinations using its real door positions, exact contiguous wall sections and color inheritance, bathroom attachments on all four sides, a single shared doorway in rendering/navigation topology, legacy doorway migration, and JSON round trips and rejection of invalid floor/wall settings. The earlier furniture/navigation/model tests are retained for compatibility with saved layouts.

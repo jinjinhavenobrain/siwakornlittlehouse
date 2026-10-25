@@ -4,11 +4,13 @@ import {box, mat, glass, cylinder} from './models.js';
 import {REFERENCE_LAYOUT} from './default-layout.js';
 import {normalizeStructure,wallSpec,SIDES,sharedBathSide,wallSegments,structuralIssues} from './structure.js';
 import {floorMaterial} from './finishes.js';
+import {makeVideoArchitecture} from './room-architecture.js';
 
 export const DEFAULT_STRUCTURE = normalizeStructure(REFERENCE_LAYOUT.structure);
 export {SIDES,wallSpec,structuralIssues};
 export const cloneStructure=()=>JSON.parse(JSON.stringify(DEFAULT_STRUCTURE));
 export function makeArchitecture(scene,s){
+ if(s.room?.kind==='video-bedroom')return makeVideoArchitecture(scene,s);
  setStructure(s);
  const structure=new T.Group(),full=new T.Group(),cut=new T.Group(),roof=new T.Group(),garden=new T.Group(),doors=new T.Group(),lightsGroup=new T.Group();scene.add(structure,full,cut,roof,garden,doors,lightsGroup);
  const b=s.bounds,ba=s.bathroom,c=s.colors,W=b.right-b.left,D=b.front-b.back,cx=(b.left+b.right)/2,cz=(b.front+b.back)/2,thick=.15;

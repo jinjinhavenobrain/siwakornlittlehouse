@@ -1,4 +1,4 @@
-# House Studio 3D — V3 surfaces and attached extensions
+# House Studio 3D — V4 room models
 
 ## Open your house
 
@@ -12,7 +12,7 @@ Keep `index.html`, `style.css` and the `assets` folder together.
 
 - **Explore:** rotate, zoom and pan. Switch between 3D, plan, front and rear views; show/hide roof and walls; restore the supplied room; choose daylight, sunset or evening.
 - **Build:** choose a floor or structural element in the model or component list. Main and bathroom floors have eight finishes: veined marble, natural stone, wood planks, herringbone wood, matt porcelain, microcement, terrazzo and ceramic tiles. Change the tint, tile/pattern size and direction independently; the pattern stays intact when recolored. Select an exterior wall and split it using a distance from the section start, or use **Split wall** and click a point in 3D or Plan. Each section has its own color. Select a section and choose **Extend section as bathroom**; its length and outward depth are editable and it stays attached when the house wall moves. The shared connection is one wall with one doorway, rather than overlapping shells. **Draw wall** uses two clicks in Plan to add an interior partition. Doors, windows and partitions remain individually editable. All edits are included in undo, named layouts and JSON exports.
-- **Decorate:** add from the 29-item catalogue. Drag furniture, adjust exact sizes and positions, rotate, duplicate or delete. R rotates; arrows nudge; Delete removes. Ctrl+Z / Ctrl+Y undo and redo. A red selection box and inspector warnings mark overlaps. The 10 cm snap can be disabled.
+- **Decorate:** add from the 35-item catalogue. Drag furniture, adjust exact sizes and positions, rotate, duplicate or delete. R rotates; arrows nudge; Delete removes. Ctrl+Z / Ctrl+Y undo and redo. A red selection box and inspector warnings mark overlaps. The 10 cm snap can be disabled.
 - **Simulate:** click a floor location or use bed, desk, bathroom, balcony and entrance actions. Blocky has exactly six rectangular parts and uses pathfinding. Daily routine cycles through destinations. Adjust height from 150–195 cm, follow the person and check destination access.
 
 An unfolded sofa bed takes additional space. Loft beds include a ladder; desks underneath are separate movable objects. Furniture can also be placed outside. Bathroom fixtures are editable like other furniture.
@@ -25,6 +25,14 @@ An unfolded sofa bed takes additional space. Loft beds include a ladder; desks u
 - The camera button exports a PNG of the 3D scene. **Present** hides the editing panels; Escape exits.
 - The slow-orbit button gives a continuous exterior/interior overview. Turn the roof on for an exterior tour.
 
+
+## Room reconstructed from video
+
+Explore now has two room models. **My little house** remains the original supplied house. **My room · video model** is a separate bedroom reconstruction with an estimated 3.90 × 4.60 m footprint and 2.48 m ceiling. It includes the visible timber floor and bed, blue bedding, dark back-wall paneling, wooden desk and wardrobe, woven chair, navy curtains, storage shelves, basket, green loft ladder and framing, and an actual cutout with descending stairs. The original recording and extracted photographs are not distributed with the app.
+
+The new furniture is editable in Decorate. Build → Main floor edits the footprint and ceiling height; the estimate label remains until you confirm that measured dimensions have been entered. Build also has loft and stair-opening controls. **Ceiling on** reveals the overhead green joists, infill and hatch. The front and left ceiling edge beams follow the wall cutaway so they do not hide the furniture.
+
+The bed, desk and stair landing support the existing walking simulation. The stairwell and ladder are excluded from flat-floor navigation; climbing and lower-floor rooms are not modeled. No bathroom or balcony was inferred. These dimensions and unseen details are visual estimates to refine after measuring. Switching either model and all edits remain undoable, autosaved and portable in JSON.
 
 ## Starting room and wall visibility
 

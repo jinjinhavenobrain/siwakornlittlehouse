@@ -1,6 +1,7 @@
 import * as T from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FLOOR, WALLS, definitions, surfaceHeight } from './core.js';
+import {videoFurniture} from './room-models.js';
 const mats=new Map(),geometries=new Map();
 export function mat(color,roughness=.75,metalness=0){const key=`${color}:${roughness}:${metalness}`;if(!mats.has(key)){const m=new T.MeshStandardMaterial({color,roughness,metalness});m.userData.shared=true;mats.set(key,m);}return mats.get(key);}
 export const glass=new T.MeshStandardMaterial({color:'#9dbab6',transparent:true,opacity:.27,roughness:.15,metalness:.2,depthWrite:false,side:T.DoubleSide});
@@ -18,7 +19,8 @@ function legs(g,w,d,h,color='#b59a72',size=.05){for(const x of [-w/2+.055,w/2-.0
 export function furnitureModel(o){
  const def=definitions[o.type],kind=def.kind,g=new T.Group(),w=def.w,d=def.d,h=def.h,c=o.color,wood='#bda17a',dark='#37433f',linen='#ecebdc';
  g.userData.itemId=o.id;
- if(kind==='bed'||kind==='loft'){
+ if(def.roomModel){videoFurniture(g,o,def,{box,cylinder,rod,mat});}
+ else if(kind==='bed'||kind==='loft'){
   const loft=kind==='loft',top=loft?1.88:.55,base=top-.25;
   if(loft){for(const x of [-w/2+.045,w/2-.045])for(const z of [-d/2+.045,d/2-.045])box(g,.09,2.25,.09,x,1.125,z,c,.008);box(g,w,.09,.07,0,2.2,-d/2,c);for(const x of [-w/2,w/2]){box(g,.065,.07,d,x,2.2,0,c);box(g,.04,.07,d,x,2.04,0,c);}box(g,w-.44,.07,.07,-.22,2.2,d/2,c);for(let y=.16;y<1.9;y+=.25)box(g,.34,.04,.08,w/2-.23,y,d/2+.19,c);for(const x of [w/2-.41,w/2-.05])rod(g,[x,.02,d/2+.4],[x,1.94,d/2+.02],.025,c);}
   else{legs(g,w,d,.22,wood,.075);box(g,w,h,.085,0,h/2,-d/2+.03,wood,.03);box(g,w-.10,.35,.05,0,h-.22,-d/2+.081,c,.05);}

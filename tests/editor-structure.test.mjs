@@ -7,7 +7,7 @@ const fresh=()=>normalizeStructure(REFERENCE_LAYOUT.structure);
 const doc=s=>({...REFERENCE_LAYOUT,structure:s});
 
 test('the supplied room replaces the three starter choices without moving its furniture',()=>{
- assert.deepEqual(PRESETS.map(p=>p.id),['my-little-house']);
+ assert.deepEqual(PRESETS.map(p=>p.id),['my-little-house','video-room']);
  assert.deepEqual(preset('my-little-house'),REFERENCE_LAYOUT.items);
  const a=preset('my-little-house');a[0].color='#ffffff';assert.notEqual(a[0].color,preset('my-little-house')[0].color);
  const s=fresh();assert.equal(s.bathroom.side,'left');assert.equal(s.bathroom.x+s.bathroom.w/2,s.bounds.left);

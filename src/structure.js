@@ -20,7 +20,7 @@ export function wallSpec(s,side){
  return n==='front'||n==='back'?{axis:'x',start:b.left,end:b.right,fixed:n==='front'?b.front:b.back,side}:{axis:'z',start:b.back,end:b.front,fixed:n==='left'?b.left:b.right,side};
 }
 export function sharedBathSide(s){return s.bathroom.side?'bath-'+OPPOSITE[s.bathroom.side]:null;}
-export function boundarySpecs(s){return SIDES.filter(side=>side!==sharedBathSide(s)).map(side=>wallSpec(s,side));}
+export function boundarySpecs(s){return SIDES.filter(side=>(s.bathroom.enabled!==false||!side.startsWith('bath-'))&&side!==sharedBathSide(s)).map(side=>wallSpec(s,side));}
 export function wallSegments(s,side){
  const v=wallSpec(s,side),points=[v.start,...(s.wallSplits?.[side]||[]).filter(p=>p>v.start+.05&&p<v.end-.05),v.end].sort((a,b)=>a-b);
  return points.slice(1).map((end,index)=>({...v,id:`segment-${side}-${index}`,index,start:points[index],end}));
@@ -52,6 +52,7 @@ export function normalizeStructure(source){
  for(const target of ['floor','bathFloor'])s.finishes[target]={material:target==='floor'?'marble':'tiles',scale:target==='floor'?.8:.3,rotation:0,...s.finishes[target]};
  s.wallVisibility={...DEFAULT_WALL_VISIBILITY,...s.wallVisibility};
  const q=s.bathroom,v=wallSpec(s,q.side);
+ if(q.enabled===false)return s;
  for(const at of [q.start,q.end])if(at>v.start+.05&&at<v.end-.05&&!s.wallSplits[q.side].some(p=>Math.abs(p-at)<.03))s.wallSplits[q.side].push(at);
  s.wallSplits[q.side].sort((a,b)=>a-b);
  // There is one shared wall. Fold legacy duplicate bathroom doorways into it.
@@ -80,7 +81,7 @@ export function extendBathroom(s,side,start,end,depth=s.bathroom.depth||1.5){
  const v=wallSpec(s,side);
  if(!MAIN_SIDES.includes(side)||![start,end,depth].every(Number.isFinite)||start<v.start-.001||end>v.end+.001||end-start<.8||depth<.8||depth>4)throw new Error('Choose at least 80 cm of wall and an extension depth from 0.8 to 4 m.');
  const old={...s.bathroom};
- s.bathroom={...old,side,start,end,depth};syncBathroom(s);
+ s.bathroom={...old,enabled:true,side,start,end,depth};syncBathroom(s);
  const q=s.bathroom;
  if(Math.max(Math.abs(q.x-q.w/2),Math.abs(q.x+q.w/2),Math.abs(q.z-q.d/2),Math.abs(q.z+q.d/2))>6) {s.bathroom=old;throw new Error('The extension must stay within the 12 m planning area.');}
  // Keep exterior bathroom windows on the outward wall when changing sides.
@@ -98,6 +99,6 @@ export function structuralIssues(s){
  const result=[];
  for(const o of s.openings){const v=wallSpec(s,o.side);if(o.at-o.w/2<v.start+.02||o.at+o.w/2>v.end-.02)result.push(`${o.id}: opening extends beyond its wall.`);}
  const q=s.bathroom;
- if(q.side&&!s.openings.some(o=>o.side===q.side&&o.kind==='door'&&o.at-o.w/2>=q.start&&o.at+o.w/2<=q.end))result.push('Add a door within the bathroom wall section to connect the rooms.');
+ if(q.enabled!==false&&q.side&&!s.openings.some(o=>o.side===q.side&&o.kind==='door'&&o.at-o.w/2>=q.start&&o.at+o.w/2<=q.end))result.push('Add a door within the bathroom wall section to connect the rooms.');
  return result;
 }

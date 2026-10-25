@@ -59,7 +59,7 @@ export function patternCanvas(kind){
  }
  patterns.set(kind,canvas);return canvas;
 }
-export function floorMaterial(finish,color,width,depth){
+export function floorMaterial(finish,color,width,depth,origin=null){
  const definition=FLOOR_MATERIALS.find(m=>m.id===finish.material)||FLOOR_MATERIALS[0];
  const map=new T.CanvasTexture(patternCanvas(definition.id));
  map.wrapS=map.wrapT=T.RepeatWrapping;
@@ -67,6 +67,7 @@ export function floorMaterial(finish,color,width,depth){
  // Rotate in metres so rectangular bathroom floors retain square tiles.
  const cos=Math.cos(map.rotation),sin=Math.sin(map.rotation),a=cos*width/finish.scale,b=-sin*depth/finish.scale,c=sin*width/finish.scale,d=cos*depth/finish.scale;
  map.matrixAutoUpdate=false;map.matrix.set(a,b,.5-(a+b)/2,c,d,.5-(c+d)/2,0,0,1);
+ if(origin){const scale=finish.scale;map.matrix.set(cos*width/scale,sin*depth/scale,(cos*(origin.x-width/2)-sin*(origin.z+depth/2))/scale,sin*width/scale,-cos*depth/scale,(sin*(origin.x-width/2)+cos*(origin.z+depth/2))/scale,0,0,1);}
  const material=new T.MeshStandardMaterial({color,map,roughness:definition.roughness,metalness:0});
  material.userData.floorTexture=true;return material;
 }
