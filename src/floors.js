@@ -56,11 +56,12 @@ export function connectionFootprint(link,padding=0){
  const sideways=Math.abs(Math.sin(link.rot))>.5,w=(sideways?link.run:link.w)+padding*2,d=(sideways?link.w:link.run)+padding*2;
  return{left:link.x-w/2,right:link.x+w/2,back:link.z-d/2,front:link.z+d/2};
 }
+export const turnSign=link=>link.style==='turn'&&link.turn==='left'?-1:1;
 export function rectanglesOverlap(a,b){return a.left<b.right-.005&&a.right>b.left+.005&&a.back<b.front-.005&&a.front>b.back+.005;}
 export function footprintInside(rect,bounds,margin=.14){return rect.left>=bounds.left+margin&&rect.right<=bounds.right-margin&&rect.back>=bounds.back+margin&&rect.front<=bounds.front-margin;}
 function itemRect(o){const c=Math.abs(Math.cos(o.rot||0)),s=Math.abs(Math.sin(o.rot||0)),w=o.w*c+o.d*s,d=o.w*s+o.d*c;return{left:o.x-w/2,right:o.x+w/2,back:o.z-d/2,front:o.z+d/2};}
 export function connectionLanding(link,upper=false){
- const turn=upper&&link.style==='turn',w=turn?.50:link.w,d=turn?link.run*.46:.50,x=turn?link.w/2+.25:0,z=turn?-link.run/2+d/2:(upper?-1:1)*(link.run/2+.25),c=Math.cos(link.rot),s=Math.sin(link.rot);
+ const turn=upper&&link.style==='turn',w=turn?.50:link.w,d=turn?link.run*.46:.50,x=turn?(link.w/2+.25)*turnSign(link):0,z=turn?-link.run/2+d/2:(upper?-1:1)*(link.run/2+.25),c=Math.cos(link.rot),s=Math.sin(link.rot);
  return itemRect({x:link.x+x*c+z*s,z:link.z-x*s+z*c,w,d,rot:link.rot});
 }
 export function connectionProblem(state,link,{furniture=true}={}){
@@ -81,7 +82,7 @@ export function connectionProblem(state,link,{furniture=true}={}){
 export function suggestConnection(state,from,to,style='timber',options={}){
  const def=STAIR_STYLES.find(s=>s.id===style);if(!def)throw new Error('Choose a stair or ladder style.');
  const floor=projectFloors(state).find(f=>f.id===from),b=floor.structure.bounds;
- const link={id:'stairs-'+Date.now().toString(36)+'-'+(state.stairs?.length||0),from,to,style,x:0,z:0,rot:0,w:def.w,run:def.run,color:def.color,...(options.dimensions||{})};
+ const link={id:'stairs-'+Date.now().toString(36)+'-'+(state.stairs?.length||0),from,to,style,x:0,z:0,rot:0,w:def.w,run:def.run,color:def.color,...(style==='turn'?{turn:'right'}:{}),...(options.dimensions||{})};
  for(const rot of options.rotations||[0,Math.PI/2,Math.PI,Math.PI*1.5]){
   link.rot=rot;const rect=connectionFootprint(link),hw=(rect.right-rect.left)/2,hd=(rect.front-rect.back)/2;
   const zs=[(b.back+b.front)/2],xs=[(b.left+b.right)/2];
@@ -93,7 +94,7 @@ export function suggestConnection(state,from,to,style='timber',options={}){
  }
  throw new Error('Make some clear floor space for this style, or choose a smaller ladder.');
 }
-export function addProjectFloor(state,style='timber',copyWalls=false){
+export function addProjectFloor(state,style='timber',copyWalls=false,turn='right'){
  ensureFloors(state);if(state.floors.length>=MAX_FLOORS)throw new Error('This project can have up to four floors.');
  const lower=state.floors.at(-1),b=lower.structure.bounds,number=state.floors.length,id='floor-'+Date.now().toString(36)+'-'+(number+1);
  // A room shell keeps the project editable without the old preset's decorative roof or fixed ladders.
@@ -103,7 +104,7 @@ export function addProjectFloor(state,style='timber',copyWalls=false){
  structure.colors=copy(lower.structure.colors);structure.finishes=copy(lower.structure.finishes);
  if(copyWalls)structure.partitions=copy(lower.structure.partitions);
  state.floors.push({id,name:`Floor ${number+1}`,items:[],structure});
- let link;try{link=suggestConnection({...state,structure:state.floors.find(f=>f.id===state.activeFloorId).structure},lower.id,id,style);}catch(error){state.floors.pop();throw error;}
+ let link;try{link=suggestConnection({...state,structure:state.floors.find(f=>f.id===state.activeFloorId).structure},lower.id,id,style,{dimensions:style==='turn'?{turn}:{}});}catch(error){state.floors.pop();throw error;}
  state.stairs.push(link);chooseFloor(state,id);state.preset='custom';return link;
 }
 export function removeTopFloor(state){

@@ -1,4 +1,5 @@
 import {REFERENCE_LAYOUT} from './default-layout.js';
+import {TWO_FLOOR_LAYOUT} from './two-floor-layout.js';
 import {VIDEO_ROOM_LAYOUT,roomStairwell,roomLadder} from './video-room.js';
 import {boundarySpecs,wallSpec,normalizeStructure,MAIN_SIDES,SIDES,FLOOR_MATERIALS} from './structure.js';
 import {STAIR_STYLES,connectionProblem,MAX_FLOORS} from './floors.js';
@@ -47,10 +48,11 @@ export const definitions = Object.fromEntries(CATALOG.map(o=>[o.type,o]));
 let counter=0;
 export const uid=()=>`item-${Date.now().toString(36)}-${++counter}`;
 export function item(type,x,z,rot=0,extras={}){const def=definitions[type];return{id:uid(),type,x,z,rot,w:def.w,d:def.d,h:def.h,color:def.color,open:false,...extras};}
-export const PRESETS=[{id:'my-little-house',name:'My little house',subtitle:'Your supplied room',image:'assets/default-layout.svg',description:'A work nook, queen bed & attached bathroom.'},{id:'video-room',name:'My room · video model',subtitle:'From your video · estimated scale',image:'assets/video-room.svg',description:'Warm timber, navy curtains & the green loft frame.'}];
-export function layoutPreset(id){if(id==='my-little-house')return validateLayout(REFERENCE_LAYOUT);if(id==='video-room')return validateLayout(VIDEO_ROOM_LAYOUT);throw new Error('Unknown room layout.');}
+export const PRESETS=[{id:'my-little-house',name:'My little house',subtitle:'Your supplied room',image:'assets/default-layout.svg',description:'A work nook, queen bed & attached bathroom.'},{id:'my-two-floor-room',name:'My two-floor room',subtitle:'Your saved layout · 2 floors',image:'assets/two-floor-layout.svg',description:'Your furnished two-floor room, ready to make your own.'}];
+export function layoutPreset(id){if(id==='my-little-house')return validateLayout(REFERENCE_LAYOUT);if(id==='my-two-floor-room')return validateLayout(TWO_FLOOR_LAYOUT);if(id==='video-room')return validateLayout(VIDEO_ROOM_LAYOUT);throw new Error('Unknown room layout.');}
 export function preset(id){
  if(id==='my-little-house')return JSON.parse(JSON.stringify(REFERENCE_LAYOUT.items));
+ if(id==='my-two-floor-room')return JSON.parse(JSON.stringify(TWO_FLOOR_LAYOUT.items));
  if(id==='video-room')return JSON.parse(JSON.stringify(VIDEO_ROOM_LAYOUT.items));
  const fixtures=[item('basin',-3.35,.10,Math.PI/2),item('toilet',-3.22,-.80,Math.PI/2),item('shower',-3.00,-1.825),item('outdoor',-.65,-2.91),item('plant',-1.82,-2.90),item('plant',2.65,2.9)];
  if(id==='loft')return [...fixtures,item('loft35',-1.05,-1.14),item('desk140',-1.25,-1.37,Math.PI/2,{w:1.40,d:.58}),item('chair',-.35,-1.25,-Math.PI/2),item('wardrobe',-1.70,1.35,Math.PI/2),item('sofa',1.62,.72,-Math.PI/2),item('coffee',.55,.73),item('fridge',.80,-1.96),item('shelf',.13,-2.03),item('rug',.5,.75),item('lamp',1.79,1.85)];
@@ -215,7 +217,7 @@ export function validateLayout(data,nested=false){
   result.floors=data.floors.map(f=>{if(!f||typeof f.id!=='string'||!/^floor-[a-z0-9-]{1,50}$/.test(f.id)||seen.has(f.id)||typeof f.name!=='string'||!f.name.trim())throw new Error('Invalid floor name or ID.');seen.add(f.id);const checked=validateLayout({format:result.format,version:1,name:f.name,items:f.id===data.activeFloorId?items:f.items,structure:f.id===data.activeFloorId?structure:f.structure},true);if(!checked.structure)throw new Error('Every floor needs a room.');return{id:f.id,name:f.name.slice(0,40),items:checked.items,structure:checked.structure};});
   if(!seen.has(result.activeFloorId))throw new Error('Choose an existing floor.');
   if(!Array.isArray(data.stairs)||data.stairs.length>12)throw new Error('Invalid floor connections.');const linkIds=new Set();
-  result.stairs=data.stairs.map(l=>{if(!l||typeof l.id!=='string'||!/^stairs-[a-z0-9-]{1,60}$/.test(l.id)||linkIds.has(l.id)||!STAIR_STYLES.some(s=>s.id===l.style)||!['x','z','w','run','rot'].every(k=>Number.isFinite(l[k]))||Math.abs(l.x)>6||Math.abs(l.z)>6||l.w<.5||l.w>3||l.run<.4||l.run>5||Math.abs(l.rot)>Math.PI*2+.001||Math.abs(l.rot/(Math.PI/2)-Math.round(l.rot/(Math.PI/2)))>.001||!/^#[0-9a-f]{6}$/i.test(l.color))throw new Error('Invalid stair or ladder dimensions.');linkIds.add(l.id);return{id:l.id,from:l.from,to:l.to,style:l.style,x:l.x,z:l.z,w:l.w,run:l.run,rot:l.rot,color:l.color};});
+  result.stairs=data.stairs.map(l=>{if(!l||typeof l.id!=='string'||!/^stairs-[a-z0-9-]{1,60}$/.test(l.id)||linkIds.has(l.id)||(l.turn!==undefined&&!['left','right'].includes(l.turn))||!STAIR_STYLES.some(s=>s.id===l.style)||!['x','z','w','run','rot'].every(k=>Number.isFinite(l[k]))||Math.abs(l.x)>6||Math.abs(l.z)>6||l.w<.5||l.w>3||l.run<.4||l.run>5||Math.abs(l.rot)>Math.PI*2+.001||Math.abs(l.rot/(Math.PI/2)-Math.round(l.rot/(Math.PI/2)))>.001||!/^#[0-9a-f]{6}$/i.test(l.color))throw new Error('Invalid stair or ladder dimensions.');linkIds.add(l.id);return{id:l.id,from:l.from,to:l.to,style:l.style,x:l.x,z:l.z,w:l.w,run:l.run,rot:l.rot,color:l.color,...(l.style==='turn'||l.turn!==undefined?{turn:l.turn||'right'}:{})};});
   for(const link of result.stairs){const problem=connectionProblem(result,link,{furniture:false});if(problem)throw new Error(problem);}
   for(let i=1;i<result.floors.length;i++)if(!result.stairs.some(l=>l.from===result.floors[i-1].id&&l.to===result.floors[i].id))throw new Error('Each upper floor needs stairs or a ladder.');
  }

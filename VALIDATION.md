@@ -1,3 +1,13 @@
+# V5.1 stair turns and uploaded starting room — 2026-10-26
+
+All 47 automated tests pass. New coverage checks both L-stair turns at all four compass rotations, the top flight's exit side, the matching upper landing and guarded opposite side, unchanged slab footprint, left-turn creation, JSON persistence, legacy right-turn defaults, invalid directions, and the supplied two-floor starting room's saved furniture and ladder placements. Existing single-room, multi-floor and legacy-import tests remain.
+
+A DOM acceptance harness using the actual source and real Three.js geometry checks left-turn selection before adding a floor; left/right edits on existing stairs; independent rotation; undo/redo; mirrored geometry in whole-house preview; JSON export/import; removal of the video-model card; loading the replacement two-floor room with all uploaded fields unchanged except its display name and preset ID; and floor switching. WebGL is explicitly stubbed in this harness, so final GPU appearance is not certified by these checks.
+
+Both offline and production bundles pass JavaScript syntax checks. The earlier preview environment cannot create a WebGL context; this update does not claim a new GPU or mobile-touch verification.
+
+---
+
 # V5 room-creator validation — 2026-10-25
 
 The automated suite passes 42 tests. New coverage includes empty projects and room sizing, the default four-metre room fitting its default stairs, the ten-metre size limit, all eight stair and ladder geometries, matching slab openings, floor elevations, independent furniture/finishes/height/name persistence, four-floor limits, top-floor removal, invalid inactive-floor and connection imports, navigation reservations, and circular tabletop sizing. All earlier supplied-room and video-model tests remain.

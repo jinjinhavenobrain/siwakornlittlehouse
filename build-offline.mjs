@@ -6,7 +6,7 @@ const map={
 const vendorNames=Object.values(map);
 for(const name of vendorNames)if(!prelude.includes(name))throw new Error('Missing embedded Three.js runtime symbol: '+name);
 let content=prelude+'\n;(function(){\nconst T = {'+Object.entries(map).filter(([k])=>k!=='OrbitControls').map(([k,v])=>JSON.stringify(k)+':'+v).join(',')+'};\nconst OrbitControls=Nl;const RoundedBoxGeometry=Vl;\n';
-for(const file of ['src/default-layout.js','src/video-room.js','src/structure.js','src/floors.js','src/core.js','src/finishes.js','src/room-models.js','src/models.js','src/room-architecture.js','src/stair-models.js','src/custom-architecture.js','src/architecture.js','src/icons.js','src/build-editor.js','src/floor-editor.js','src/main.js']){
+for(const file of ['src/default-layout.js','src/two-floor-layout.js','src/video-room.js','src/structure.js','src/floors.js','src/core.js','src/finishes.js','src/room-models.js','src/models.js','src/room-architecture.js','src/stair-models.js','src/custom-architecture.js','src/architecture.js','src/icons.js','src/build-editor.js','src/floor-editor.js','src/main.js']){
  let src=readFileSync(file,'utf8').replace(/^import .*?;\s*$/gm,'').replace(/^export \{.*?\};?\s*$/gm,'').replace(/^export\s+/gm,'');
  content+='\n// '+file+'\n'+src+'\n';
 }

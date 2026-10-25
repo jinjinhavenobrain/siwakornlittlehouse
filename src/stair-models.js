@@ -1,6 +1,6 @@
 import * as T from 'three';
 import {box,cylinder,mat} from './models.js';
-import {STAIR_STYLES} from './floors.js';
+import {STAIR_STYLES,turnSign} from './floors.js';
 
 export function stairModel(link,rise){
  const g=new T.Group(),def=STAIR_STYLES.find(s=>s.id===link.style),w=link.w,d=link.run,c=link.color,metal=link.style==='metal-ladder'?'#53635d':'#52615a';
@@ -42,7 +42,7 @@ export function stairModel(link,rise){
    for(let i=0;i<=n;i+=2){const t=i/n;rod([x,t*rise,d/2-t*d],[x,t*rise+.86,d/2-t*d],.022,metal);}
   }
  }
- g.position.set(link.x,0,link.z);g.rotation.y=link.rot;return g;
+ g.scale.x=turnSign(link);g.position.set(link.x,0,link.z);g.rotation.y=link.rot;return g;
 }
 
 export function openingGuard(link,y){
@@ -55,5 +55,5 @@ export function openingGuard(link,y){
  if(link.style==='turn'){box(g,w,.035,.035,0,y+.90,-d/2,'#6e7d6b');for(let x=-w/2;x<=w/2+.001;x+=.30)box(g,.025,.90,.025,x,y+.45,-d/2,'#6e7d6b');}
  box(g,w,.035,.035,0,y+.90,d/2,'#6e7d6b');
  for(let x=-w/2;x<=w/2+.001;x+=.30)box(g,.025,.90,.025,x,y+.45,d/2,'#6e7d6b');
- g.position.set(link.x,0,link.z);g.rotation.y=link.rot;return g;
+ g.scale.x=turnSign(link);g.position.set(link.x,0,link.z);g.rotation.y=link.rot;return g;
 }

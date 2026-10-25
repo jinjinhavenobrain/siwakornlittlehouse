@@ -44,13 +44,11 @@ An unfolded sofa bed takes additional space. Loft beds include a ladder; desks u
 - The slow-orbit button gives a continuous exterior/interior overview. Turn the roof on for an exterior tour.
 
 
-## Room reconstructed from video
+## Your saved two-floor starting room
 
-Rooms also offers two reference models. **My little house** remains the original supplied house. **My room · video model** is a separate bedroom reconstruction with an estimated 3.90 × 4.60 m footprint and 2.48 m ceiling. It includes the visible timber floor and bed, blue bedding, dark back-wall paneling, wooden desk and wardrobe, woven chair, navy curtains, storage shelves, basket, green loft ladder and framing, and an actual cutout with descending stairs. The original recording and extracted photographs are not distributed with the app. This reference represents one level of the two-floor room; use the floor creator to add editable levels and new connections.
+Rooms offers **My little house** and **My two-floor room**. The video-model card has been replaced by the uploaded two-floor layout. The new starting room preserves the saved 4.00 × 4.60 m footprint, 2.80 m ceilings, nine ground-floor items, four upper-floor items, doors, windows, finishes and wooden ladder. Use the floor tabs to edit either level, or View whole house to inspect them together. Existing autosaves remain available.
 
-The new furniture is editable in Decorate. Build → Main floor edits the footprint and ceiling height; the estimate label remains until you confirm that measured dimensions have been entered. Build also has loft and stair-opening controls. **Ceiling on** reveals the overhead green joists, infill and hatch. The front and left ceiling edge beams follow the wall cutaway so they do not hide the furniture.
-
-The bed, desk and stair landing support the existing walking simulation. The stairwell and ladder are excluded from flat-floor navigation; climbing and lower-floor rooms are not modeled. No bathroom or balcony was inferred. These dimensions and unseen details are visual estimates to refine after measuring. Switching either model and all edits remain undoable, autosaved and portable in JSON.
+**L-shaped stairs** now have independent **Turn left** / **Turn right** controls, based on the direction you walk upstairs. Choose the turn before adding a floor, or select an existing L staircase and use its two turn buttons. Direction rotates the whole staircase separately. Steps, rails and the upper landing follow the selected turn. If a new landing does not fit, the editor looks for another position while keeping the chosen rotation. Turn selection persists in undo, autosave and JSON. Older L stairs without a turn field keep their previous right-turn shape. Older video-room saves can still be imported.
 
 ## Starting room and wall visibility
 
