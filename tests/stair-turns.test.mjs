@@ -23,7 +23,7 @@ test('turn direction survives JSON; older L stairs default to right and invalid 
  const s=blankProject(6,6);addProjectFloor(s,'turn',false,'left');const checked=validateLayout(s);assert.equal(checked.stairs[0].turn,'left');assert.deepEqual(validateLayout(JSON.parse(JSON.stringify(checked))),checked);
  const old=structuredClone(s);delete old.stairs[0].turn;assert.equal(validateLayout(old).stairs[0].turn,'right');const bad=structuredClone(s);bad.stairs[0].turn='forward';assert.throws(()=>validateLayout(bad),/stair or ladder/);
 });
-test('adding a new L staircase uses the selected turn and leaves a fitting arrival landing',()=>{
+test('adding a new L staircase uses the selected turn',()=>{
  for(const turn of ['left','right']){const s=blankProject(4,4.6),l=addProjectFloor(s,'turn',false,turn);assert.equal(l.turn,turn);assert.equal(connectionProblem(s,l),null);assert.equal(validateLayout(s).floors.length,2);}
 });
 test('the uploaded two-floor room replaces the video card with all furniture and its saved ladder',()=>{

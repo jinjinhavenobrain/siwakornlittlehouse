@@ -1,3 +1,11 @@
+# Free stair placement — 2026-10-29
+
+All 50 automated tests pass. The three new regression checks cover every stair style being added over furniture, partitions and a door in a small room; overlapping connections and oversized flights preserving their exact placement through JSON validation; and overlapping floor openings clipping to the floor without rejection. Existing validation checks still reject invalid numeric dimensions, identifiers, floor links and missing floor chains. Older tests were updated where they previously expected clearance enforcement.
+
+Stair style, rotation, turn, size and movement handlers now edit the chosen connection directly and preserve its position. The clear-space search and placement rejection messages are removed. Inspector copy describes free overlap placement. Both the dependency-free and production builds pass JavaScript syntax checks. No new GPU appearance verification is claimed for this behavior-only change.
+
+---
+
 # V5.1 stair turns and uploaded starting room — 2026-10-26
 
 All 47 automated tests pass. New coverage checks both L-stair turns at all four compass rotations, the top flight's exit side, the matching upper landing and guarded opposite side, unchanged slab footprint, left-turn creation, JSON persistence, legacy right-turn defaults, invalid directions, and the supplied two-floor starting room's saved furniture and ladder placements. Existing single-room, multi-floor and legacy-import tests remain.

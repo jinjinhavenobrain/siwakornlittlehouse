@@ -120,7 +120,7 @@ export function itemWarnings(o,items){
  if(op.some(p=>WALLS.some(w=>overlap(p,w))))warnings.push('Overlaps a wall or balcony railing.');
  if(op.some(p=>items.some(other=>other.id!==o.id&&pieces(other).some(q=>overlap(p,q)))))warnings.push('Overlaps another object.');
  if(op.some(p=>DOOR_ZONES.some(w=>overlap(p,w))))warnings.push('Occupies a door clearance zone.');
- if(op.some(p=>(floorNavigation.landings||[]).some(r=>overlap(p,{x:(r.left+r.right)/2,z:(r.back+r.front)/2,w:r.right-r.left,d:r.front-r.back,rot:0}))))warnings.push('Occupies a stair landing. Leave this space clear.');
+ if(op.some(p=>(floorNavigation.landings||[]).some(r=>overlap(p,{x:(r.left+r.right)/2,z:(r.back+r.front)/2,w:r.right-r.left,d:r.front-r.back,rot:0}))))warnings.push('Overlaps a stair landing.');
  if(definitions[o.type].kind==='loft')warnings.push(`Loft: mattress about ${(o.h*1.88/2.25).toFixed(2)} m high. Check ceiling, guardrails & ladder.`);
  if(Math.abs(o.x)>6||Math.abs(o.z)>6)warnings.push('Outside the illustrated garden area.');
  if(structural?.room?.kind==='custom-room'){const b=structural.bounds;if(op.some(p=>p.x-p.w/2<b.left||p.x+p.w/2>b.right||p.z-p.d/2<b.back||p.z+p.d/2>b.front))warnings.push('Part of this item is outside the room.');if(o.h>structural.room.height)warnings.push('This item is taller than the ceiling.');}
@@ -218,7 +218,7 @@ export function validateLayout(data,nested=false){
   if(!seen.has(result.activeFloorId))throw new Error('Choose an existing floor.');
   if(!Array.isArray(data.stairs)||data.stairs.length>12)throw new Error('Invalid floor connections.');const linkIds=new Set();
   result.stairs=data.stairs.map(l=>{if(!l||typeof l.id!=='string'||!/^stairs-[a-z0-9-]{1,60}$/.test(l.id)||linkIds.has(l.id)||(l.turn!==undefined&&!['left','right'].includes(l.turn))||!STAIR_STYLES.some(s=>s.id===l.style)||!['x','z','w','run','rot'].every(k=>Number.isFinite(l[k]))||Math.abs(l.x)>6||Math.abs(l.z)>6||l.w<.5||l.w>3||l.run<.4||l.run>5||Math.abs(l.rot)>Math.PI*2+.001||Math.abs(l.rot/(Math.PI/2)-Math.round(l.rot/(Math.PI/2)))>.001||!/^#[0-9a-f]{6}$/i.test(l.color))throw new Error('Invalid stair or ladder dimensions.');linkIds.add(l.id);return{id:l.id,from:l.from,to:l.to,style:l.style,x:l.x,z:l.z,w:l.w,run:l.run,rot:l.rot,color:l.color,...(l.style==='turn'||l.turn!==undefined?{turn:l.turn||'right'}:{})};});
-  for(const link of result.stairs){const problem=connectionProblem(result,link,{furniture:false});if(problem)throw new Error(problem);}
+  for(const link of result.stairs){const problem=connectionProblem(result,link);if(problem)throw new Error(problem);}
   for(let i=1;i<result.floors.length;i++)if(!result.stairs.some(l=>l.from===result.floors[i-1].id&&l.to===result.floors[i].id))throw new Error('Each upper floor needs stairs or a ladder.');
  }
  return result;
