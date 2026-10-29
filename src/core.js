@@ -3,6 +3,7 @@ import {TWO_FLOOR_LAYOUT} from './two-floor-layout.js';
 import {VIDEO_ROOM_LAYOUT,roomStairwell,roomLadder} from './video-room.js';
 import {boundarySpecs,wallSpec,normalizeStructure,MAIN_SIDES,SIDES,FLOOR_MATERIALS} from './structure.js';
 import {STAIR_STYLES,connectionProblem,MAX_FLOORS} from './floors.js';
+import {FENCE_STYLES,fenceObstacle,clipRectangle} from './surfaces.js';
 export const FLOOR = .38;
 export const HOUSE = { width:4.5, depth:4.75, wall:.15, height:3, ridge:4, bathroomWidth:1.5, bathroomDepth:3, balconyDepth:1 };
 export const CATALOG = [
@@ -75,6 +76,8 @@ wall(.5,2.30,1,.045);
 export const DOOR_ZONES=[{name:'Front door',x:0,z:2.19,w:2.0,d:.75,rot:0},{name:'Rear door',x:1.65,z:-2.18,w:.8,d:.7,rot:0},{name:'Bathroom door',x:-2.16,z:.05,w:.85,d:.8,rot:0}];
 let structural=null,floorNavigation={holes:[],connections:[]};
 export function setStructure(s,navigation={holes:[],connections:[]}){
+ const manualHoles=(s.floorCuts||[]).map(r=>clipRectangle(r,s.bounds)).filter(Boolean);
+ navigation={...navigation,holes:[...(navigation.holes||[]),...manualHoles]};
  floorNavigation=navigation;
  structural=s;WALLS.length=0;DOOR_ZONES.length=0;
  const walls=(side)=>{const spec=wallSpec(s,side),horizontal=spec.axis==='x',{start,end,fixed}=spec;
@@ -90,6 +93,7 @@ export function setStructure(s,navigation={holes:[],connections:[]}){
  if(s.room?.kind==='video-bedroom'){const hole=roomStairwell(s),ladder=roomLadder(s);WALLS.push({x:(hole.left+hole.right)/2,z:(hole.back+hole.front)/2,w:hole.right-hole.left,d:hole.front-hole.back,rot:0},{...ladder,rot:0});}
  for(const r of [...(navigation.holes||[]),...(navigation.connections||[])])WALLS.push({x:(r.left+r.right)/2,z:(r.back+r.front)/2,w:r.right-r.left,d:r.front-r.back,rot:0});
  for(const p of s.partitions)WALLS.push({x:p.x,z:p.z,w:p.w,d:p.d,rot:p.rot||0});
+ for(const f of s.fences||[])WALLS.push(fenceObstacle(f));
 }
 
 export function worldPoint(o,x,z){const c=Math.cos(o.rot||0),s=Math.sin(o.rot||0);return{x:o.x+x*c+z*s,z:o.z-x*s+z*c};}
@@ -197,6 +201,16 @@ export function validateLayout(data,nested=false){
   const colors=['wall','floor','foundation','bathWall','bathFloor','roof','bathRoof','balcony','rail','door','window','frame','trim','garden'];for(const k of colors)if(!/^#[0-9a-f]{6}$/i.test(s.colors[k]||''))throw new Error('Invalid structural color.');
   const seen=new Set();for(const o of s.openings){if(!o||typeof o.id!=='string'||o.id.length>60||seen.has(o.id)||!['door','window'].includes(o.kind)||!['front','back','left','right','bath-front','bath-back','bath-left','bath-right'].includes(o.side)||!['at','w','h','sill'].every(k=>Number.isFinite(o[k]))||Math.abs(o.at)>6||o.w<.4||o.w>3||o.h<.3||o.h>2.7||o.sill<0||o.sill+o.h>3)throw new Error('Invalid door or window.');seen.add(o.id);}
   for(const p of s.partitions)if(!p||typeof p.id!=='string'||p.id.length>60||seen.has(p.id)||!['x','z','w','d','h','rot'].every(k=>Number.isFinite(p[k]))||Math.abs(p.x)>6||Math.abs(p.z)>6||p.w<.1||p.d<.1||p.h<.3||p.h>3||p.w>6||p.d>6||!/^#[0-9a-f]{6}$/i.test(p.color))throw new Error('Invalid partition.');else seen.add(p.id);
+  for(const key of ['floorCuts','fences']){
+   if(s[key]!==undefined&&(!Array.isArray(s[key])||s[key].length>(key==='fences'?60:30)))throw new Error('Use up to 30 floor openings and 60 fence sections per floor.');
+   for(const p of s[key]||[]){
+    if(!p||typeof p.id!=='string'||!(/^[a-zA-Z0-9_-]{1,60}$/).test(p.id)||seen.has(p.id))throw new Error('Invalid or duplicate floor opening / fence ID.');
+    seen.add(p.id);
+    if(key==='floorCuts'){
+     if(!['left','right','back','front'].every(k=>Number.isFinite(p[k])&&Math.abs(p[k])<=6)||p.right-p.left<.0999||p.front-p.back<.0999)throw new Error('Floor openings need finite dimensions of at least 10 cm.');
+    }else if(!['x1','z1','x2','z2'].every(k=>Number.isFinite(p[k])&&Math.abs(p[k])<=6)||!Number.isFinite(p.h)||p.h<.3||p.h>2||Math.hypot(p.x2-p.x1,p.z2-p.z1)<.0999||!FENCE_STYLES.some(style=>style.id===p.style)||!/^#[0-9a-f]{6}$/i.test(p.color))throw new Error('Check the fence endpoints, style, color and height (0.3–2 m).');
+   }
+  }
   for(const [key,value] of Object.entries(s.colors))if(!/^#[0-9a-f]{6}$/i.test(value))throw new Error('Invalid structural color.');
   if(s.bathroom.side!==undefined&&(!MAIN_SIDES.includes(s.bathroom.side)||!['start','end','depth'].every(k=>Number.isFinite(s.bathroom[k]))||s.bathroom.end-s.bathroom.start<.8||s.bathroom.depth<.8||s.bathroom.depth>4))throw new Error('Invalid bathroom attachment.');
   if(s.wallSplits!==undefined){if(!s.wallSplits||typeof s.wallSplits!=='object'||Array.isArray(s.wallSplits))throw new Error('Invalid wall splits.');for(const [side,points] of Object.entries(s.wallSplits)){if(!MAIN_SIDES.includes(side)||!Array.isArray(points)||points.length>12||points.some(n=>!Number.isFinite(n)||Math.abs(n)>6))throw new Error('Invalid wall splits.');}}

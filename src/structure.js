@@ -48,6 +48,8 @@ export function normalizeStructure(source){
  syncBathroom(s);
  s.wallSplits=Object.fromEntries(MAIN_SIDES.map(side=>[side,[...new Set(s.wallSplits?.[side]||[])].sort((a,b)=>a-b)]));
  s.segmentColors ||= {};
+ s.floorCuts ||= [];
+ s.fences ||= [];
  s.finishes ||= {};
  for(const target of ['floor','bathFloor'])s.finishes[target]={material:target==='floor'?'marble':'tiles',scale:target==='floor'?.8:.3,rotation:0,...s.finishes[target]};
  s.wallVisibility={...DEFAULT_WALL_VISIBILITY,...s.wallVisibility};

@@ -17,7 +17,7 @@ export function blankStructure(width=4,depth=4,height=2.8){
  const s=copy(REFERENCE_LAYOUT.structure);
  s.bounds={left:-width/2,right:width/2,back:-depth/2,front:depth/2};
  s.bathroom={enabled:false,x:-2.7,z:0,w:1.5,d:3,side:'left',start:-1.5,end:1.5,depth:1.5};
- s.balcony={enabled:false,depth:1};s.openings=[];s.partitions=[];s.wallSplits={};s.segmentColors={};
+ s.balcony={enabled:false,depth:1};s.openings=[];s.partitions=[];s.wallSplits={};s.segmentColors={};s.floorCuts=[];s.fences=[];
  s.room={kind:'custom-room',height,estimated:false};
  s.colors={...s.colors,wall:'#e8e7df',floor:'#c3a17a',foundation:'#bdc0b3',roof:'#eeede6',frame:'#6c7a70',door:'#b59973'};
  s.finishes={floor:{material:'wood',scale:.65,rotation:0},bathFloor:{material:'matte',scale:.6,rotation:0}};
@@ -92,7 +92,7 @@ export function removeTopFloor(state){
  ensureFloors(state);if(state.floors.length<2)throw new Error('Keep at least one floor.');const id=state.floors.at(-1).id;
  state.floors.pop();state.stairs=state.stairs.filter(s=>s.from!==id&&s.to!==id);chooseFloor(state,state.floors.at(-1).id);return state;
 }
-export function floorHoles(state,id){return(state.stairs||[]).filter(s=>s.to===id).map(s=>connectionFootprint(s));}
+export function floorHoles(state,id){return[...(projectFloors(state).find(f=>f.id===id)?.structure.floorCuts||[]),...(state.stairs||[]).filter(s=>s.to===id).map(s=>connectionFootprint(s))];}
 // Split the slab around actual openings; overlapping holes remain safe.
 export function floorRectangles(bounds,holes=[]){
  let rects=[{...bounds}];for(const hole of holes){const next=[];for(const r of rects){if(!rectanglesOverlap(r,hole)){next.push(r);continue;}

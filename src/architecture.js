@@ -6,6 +6,8 @@ import {normalizeStructure,wallSpec,SIDES,sharedBathSide,wallSegments,structural
 import {floorMaterial} from './finishes.js';
 import {makeVideoArchitecture} from './room-architecture.js';
 import {makeCustomArchitecture} from './custom-architecture.js';
+import {floorRectangles} from './floors.js';
+import {addFences} from './surface-models.js';
 
 export const DEFAULT_STRUCTURE = normalizeStructure(REFERENCE_LAYOUT.structure);
 export {SIDES,wallSpec,structuralIssues};
@@ -19,10 +21,10 @@ export function makeArchitecture(scene,s,options={}){
  function tag(m,id){m.userData.structureId=id;return m;}
  function cub(g,w,h,d,x,y,z,color,id,rounded=0){const m=box(g,w,h,d,x,y,z,color,rounded);if(id)tag(m,id);return m;}
  const wallGroups={};
- function floorSurface(w,d,x,z,target,id){const material=floorMaterial(s.finishes[target],c[target],w,d),m=new T.Mesh(new T.PlaneGeometry(w,d),material);m.rotation.x=-Math.PI/2;m.position.set(x,FLOOR+.008,z);m.receiveShadow=true;tag(m,id);structure.add(m);}
+ function floorSurface(w,d,x,z,target,id){const material=floorMaterial(s.finishes[target],c[target],w,d,{x,z}),m=new T.Mesh(new T.PlaneGeometry(w,d),material);m.rotation.x=-Math.PI/2;m.position.set(x,FLOOR+.008,z);m.receiveShadow=true;tag(m,id);structure.add(m);}
  // Raised slab, finish, bathroom, and rear deck follow the edited dimensions.
- cub(structure,W,.36,D,cx,.18,cz,c.foundation,'floor',.025);
- floorSurface(W-.15,D-.15,cx,cz,'floor','floor');
+ for(const rect of floorRectangles(b,s.floorCuts||[])){const w=rect.right-rect.left,d=rect.front-rect.back,x=(rect.left+rect.right)/2,z=(rect.back+rect.front)/2;cub(structure,w,.36,d,x,.18,z,c.foundation,'floor');floorSurface(w,d,x,z,'floor','floor');}
+ addFences(structure,s,FLOOR);
  cub(structure,ba.w,.36,ba.d,ba.x,.18,ba.z,c.foundation,'bathroom');
  floorSurface(ba.w-.15,ba.d-.15,ba.x,ba.z,'bathFloor','bathroom');
  const deckCenter=b.back-s.balcony.depth/2;

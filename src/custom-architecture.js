@@ -5,10 +5,11 @@ import {boundarySpecs,wallSegments} from './structure.js';
 import {floorMaterial} from './finishes.js';
 import {floorRectangles,connectionFootprint,connectionLanding} from './floors.js';
 import {stairModel,openingGuard} from './stair-models.js';
+import {addFences} from './surface-models.js';
 
 export function makeCustomArchitecture(scene,s,options={}){
- const incoming=options.incoming||[],outgoing=options.outgoing||[],holes=incoming.map(link=>connectionFootprint(link));
- setStructure(s,{holes,connections:outgoing.map(link=>connectionFootprint(link)),landings:[...incoming.map(l=>connectionLanding(l,true)),...outgoing.map(l=>connectionLanding(l,false))]});
+ const incoming=options.incoming||[],outgoing=options.outgoing||[],stairHoles=incoming.map(link=>connectionFootprint(link)),holes=[...stairHoles,...(s.floorCuts||[])];
+ setStructure(s,{holes:stairHoles,connections:outgoing.map(link=>connectionFootprint(link)),landings:[...incoming.map(l=>connectionLanding(l,true)),...outgoing.map(l=>connectionLanding(l,false))]});
  const structure=new T.Group(),full=new T.Group(),cut=new T.Group(),roof=new T.Group(),garden=new T.Group(),doors=new T.Group(),lightsGroup=new T.Group();scene.add(structure,full,cut,roof,garden,doors,lightsGroup);
  const b=s.bounds,c=s.colors,H=s.room.height,wallGroups={},openingMeshes={},doorLeaves={},lights=[];
  const tag=(m,id)=>(m.userData.structureId=id,m),cub=(g,w,h,d,x,y,z,color,id)=>tag(box(g,w,h,d,x,y,z,color),id);
@@ -39,9 +40,10 @@ export function makeCustomArchitecture(scene,s,options={}){
   else {const leaf=new T.Group();leaf.position.x=-o.w/2+.04;g.add(leaf);cub(leaf,o.w-.08,o.h-.07,.035,o.w/2-.04,o.h/2,0,o.color||c.door,o.id);cub(leaf,.025,.13,.07,o.w-.18,o.h*.52,.045,c.frame,o.id);doorLeaves[o.id]=leaf;}
  }
  // Ceiling openings align with the next floor's stairwell.
- for(const rect of floorRectangles(b,outgoing.map(link=>connectionFootprint(link))))cub(roof,rect.right-rect.left,.10,rect.front-rect.back,(rect.left+rect.right)/2,FLOOR+H+.05,(rect.back+rect.front)/2,c.roof,'ceiling');
+ for(const rect of floorRectangles(b,[...outgoing.map(link=>connectionFootprint(link)),...(options.ceilingHoles||[])]))cub(roof,rect.right-rect.left,.10,rect.front-rect.back,(rect.left+rect.right)/2,FLOOR+H+.05,(rect.back+rect.front)/2,c.roof,'ceiling');
  for(const link of outgoing){const m=stairModel(link,link.rise);m.position.y=FLOOR;structure.add(m);}
  for(const link of incoming){if(options.showIncoming!==false){const m=stairModel(link,link.rise);m.position.y=FLOOR-link.rise;structure.add(m);}structure.add(openingGuard(link,FLOOR));}
+ addFences(structure,s,FLOOR);
  const light=new T.PointLight('#fff1d7',0,9,2);light.position.set((b.left+b.right)/2,FLOOR+H-.2,(b.back+b.front)/2);lightsGroup.add(light);lights.push(light);
  const base=new T.Mesh(new T.PlaneGeometry(200,200),mat('#e7ede3'));base.rotation.x=-Math.PI/2;base.position.y=-.15;base.receiveShadow=true;scene.add(base);
  return {structure,full,cut,roof,garden,doors,lightsGroup,lights,base,wallGroups,openingMeshes,doorLeaves};

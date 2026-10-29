@@ -14,6 +14,14 @@ New visitors see a simple room-size setup. Returning visitors keep their current
 
 The Rooms panel walks through shaping the room, decorating it and adding an upper floor. Doors and windows start on different walls and additional openings are placed in a free interval. All sizes use metres. Project names are preserved when furniture is added.
 
+## Split a floor and add fences
+
+Choose the floor to edit, then **Build → Split floor**. Plan opens automatically. Click two opposite corners to outline a rectangular section, adjust its edge coordinates if needed, and choose **Remove this floor section**. Repeat to make a larger or stepped opening. Sections can touch room edges or overlap automatic stair openings. Furniture stays where it was placed. The starting rooms are unchanged until you edit them.
+
+Click an opening or find it under **Walls, doors & other parts** to resize it or choose **Restore this floor section**. Restoring a custom section keeps any overlapping stair openings and fences. Each floor keeps its own openings through autosave, named layouts, JSON export/import and undo/redo.
+
+Choose **+ Fence**, then click its start and end in Plan. A fence can overlap objects and run at any angle. Select it to drag, edit endpoints, change height (0.3–2 m), recolor, choose vertical rails / horizontal rails / glass panels, or delete it. An opening also offers **Add fence on selected edges** with separate back/right/front/left choices, so you can leave access for a staircase or ladder. Added fences remain independent when the opening is resized or restored. Walking simulation reserves openings and fences; stair climbing is still not simulated.
+
 ## Connect multiple floors
 
 Use **Build → Floors, stairs & ladders**, or **Add / manage floors** beside the floor tabs. Choose one of eight styles: wooden stairs, open timber stairs, floating stairs, L-shaped stairs, spiral stairs, wooden loft ladder, metal loft ladder or space-saving alternating steps. **Add floor** adds an empty upper room and places the selected connection at the room center, allowing overlaps. Interior dividers can optionally be copied.

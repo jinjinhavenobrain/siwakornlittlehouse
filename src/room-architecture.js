@@ -4,6 +4,8 @@ import {box,mat,cylinder} from './models.js';
 import {boundarySpecs,wallSegments} from './structure.js';
 import {roomStairwell,roomLadder,roomFloorRectangles} from './video-room.js';
 import {floorMaterial} from './finishes.js';
+import {floorRectangles} from './floors.js';
+import {addFences} from './surface-models.js';
 
 export function makeVideoArchitecture(scene,s){
  setStructure(s);
@@ -17,7 +19,8 @@ export function makeVideoArchitecture(scene,s){
   cub(structure,w,.14,d,x,FLOOR-.075,z,c.foundation,id);
   const finish=floorMaterial(s.finishes[target],c[target],w,d,{x,z}),plane=tag(new T.Mesh(new T.PlaneGeometry(w,d),finish),id);plane.rotation.x=-Math.PI/2;plane.position.set(x,FLOOR+.008,z);plane.receiveShadow=true;structure.add(plane);
  }
- for(const rect of roomFloorRectangles(s))floorRectangle(rect);
+ for(const rect of roomFloorRectangles(s))for(const part of floorRectangles(rect,s.floorCuts||[]))floorRectangle(part);
+ addFences(structure,s,FLOOR);
  if(s.bathroom.enabled!==false){const q=s.bathroom;floorRectangle({left:q.x-q.w/2,right:q.x+q.w/2,back:q.z-q.d/2,front:q.z+q.d/2},'bathFloor','bathroom');cub(roof,q.w,.10,q.d,q.x,FLOOR+height+.05,q.z,c.bathRoof,'bath-roof');}
  function wall(group,v,holes,H,id,color){
   const points=[v.start,v.end,...holes.flatMap(o=>[Math.max(v.start,o.at-o.w/2),Math.min(v.end,o.at+o.w/2)])].filter(p=>p>=v.start&&p<=v.end).sort((a,b)=>a-b),horizontal=v.axis==='x';

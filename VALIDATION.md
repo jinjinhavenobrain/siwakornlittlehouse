@@ -1,3 +1,13 @@
+# V5.3 floor splitting and fences — 2026-10-29
+
+All 57 automated tests pass. Seven new tests cover edge-to-edge floor removal, clipping and overlapping stair openings, independently restoring overlapping cuts, floor-local persistence through switching and JSON, walking reservations, all three fence styles at a chosen angle and height, malformed active/inactive-floor imports, and real ray intersections proving that both the floor finish and slab are absent inside custom openings in the custom and original-house renderers. Texture painting is stubbed for the ray geometry test; the geometry is real Three.js. The offline production bundle passes syntax checking and git diff passes whitespace checks.
+
+The cloud browser cannot create a WebGL context. A separate, temporary editor test bundle replaces only the renderer with a labeled software wireframe renderer. Normal UI actions verified room creation; the Split floor tool switching to Plan; two-corner selection of a full-width 4.40 m² strip; review before removal; adding three selected fence edges while leaving the fourth open; selecting a fence and changing its style and height; undo/redo; restoring the removed strip while retaining fences; and drawing a standalone 2.70 m fence. This test bundle is excluded from the published application. Final GPU materials/shadows and mobile touch remain unverified.
+
+Custom openings are saved per floor. The custom room slab, original house slab, video-room slab and the ceiling beneath an upper custom opening use the same rectangle subtraction. Existing automatic stair openings remain. Fences are independently editable objects; resizing/restoring an opening does not move or delete its fences. No supplied starting layout or furniture positions were changed.
+
+---
+
 # Free stair placement — 2026-10-29
 
 All 50 automated tests pass. The three new regression checks cover every stair style being added over furniture, partitions and a door in a small room; overlapping connections and oversized flights preserving their exact placement through JSON validation; and overlapping floor openings clipping to the floor without rejection. Existing validation checks still reject invalid numeric dimensions, identifiers, floor links and missing floor chains. Older tests were updated where they previously expected clearance enforcement.
